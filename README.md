@@ -6,16 +6,24 @@ This project aims to build a comprehensive n8n automation to identify real estat
 
 The complete automation flow consists of the following steps:
 
-### Step 1: Inventory Data Collection (Current Functionality)
+### Step 1: Inventory Data Collection (Complete)
 
-This Python script automates the login process to a real estate portal and the download of property inventory in XLS format. It includes interaction with download submenus.
+This Python script automates the login process to a real estate portal and the download of property inventory in XLS format. It includes interaction with download submenus. The script now also handles automatic conversion of `.xls` files to `.xlsx` for improved data processing compatibility.
 
 **Script location:** `src/data_collection/download_inventory.py`
 
+### Step 2: Data Cleaning, Validation, and Normalization (In Progress)
+
+We have defined a detailed PostgreSQL database schema for property data and are now focusing on implementing the data cleaning, validation, and normalization logic. This involves processing the downloaded Excel files, cleaning inconsistencies, normalizing data formats, and preparing data for storage.
+
+**Script location:** `src/data_processing/clean_data.py`
+
+### Step 3: Data Storage (Planned)
+
+This step involves persisting processed data into a PostgreSQL database. The database schema has been designed to support complex queries and future scalability.
+
 ### Future Steps:
 
-*   **Step 2: Data Cleaning, Validation, and Normalization:** Processing the downloaded XLS file, cleaning inconsistencies, and normalizing data formats.
-*   **Step 3: Data Storage:** Persisting processed data in a database (e.g., Supabase) or temporary JSON.
 *   **Step 4: Top Property Selection:** Filtering and selecting high-potential properties based on configurable criteria.
 *   **Step 5: PDF Analysis:** Extracting key data from property brochures in PDF format.
 *   **Step 6 (Optional): AI Image Analysis:** Exploring the feasibility of using AI for extracting features from property images.

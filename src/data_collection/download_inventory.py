@@ -132,9 +132,8 @@ def main():
             )
             logger.info("Successful login URL condition met.")
         except TimeoutException:
-            logger.error(f"X Timeout while verifying login URL. Current URL: {driver.current_url}")
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            html_filename = os.path.join(SCREENSHOT_DIR, f"{timestamp}_login_failed_page_source.html")
+            logger.error(f"Timeout while verifying login URL. Current URL: {driver.current_url}")
+            html_filename = os.path.join(SCREENSHOT_DIR, f"{datetime.now().strftime("%Y%m%d_%H%M%S")}_login_failed_page_source.html")
             logger.error(f"Saving page content after login attempt to '{html_filename}'...")
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(driver.page_source)
@@ -145,9 +144,8 @@ def main():
             logger.info("Login successful with Selenium. Redirected to: " + driver.current_url)
             logger.info("Final URL verification successful. Proceeding with navigation to properties.")
         else:
-            logger.error(f"X Final URL does not match successful login expectations: {driver.current_url}")
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            html_filename = os.path.join(SCREENSHOT_DIR, f"{timestamp}_unexpected_post_login_page_source.html")
+            logger.error(f"Final URL does not match successful login expectations: {driver.current_url}")
+            html_filename = os.path.join(SCREENSHOT_DIR, f"{datetime.now().strftime("%Y%m%d_%H%M%S")}_unexpected_post_login_page_source.html")
             logger.error(f"Saving unexpected page content to '{html_filename}'...")
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(driver.page_source)
@@ -213,7 +211,7 @@ def main():
         logger.error("Ensure the browser driver (ChromeDriver/GeckoDriver) is installed and in your PATH.")
         exit(1)
     except Exception as e:
-        logger.error(f"X An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
         exit(1)
     finally:
         if driver:

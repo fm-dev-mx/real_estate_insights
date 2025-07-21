@@ -55,3 +55,14 @@ This document chronologically details the actions taken, problems encountered, a
 ## Current Project Status
 
 The inventory data collection script is now fully functional, automating the download of property inventory from a real estate portal. It has been optimized, refactored, and adheres to best coding practices. All development and debugging tasks have been completed. The project has been adapted to serve as the foundation for an n8n automation, featuring a modular structure for future expansions.
+
+### 2025-07-20 (Data Processing & Database Schema Definition)
+
+*   **Action:** Initiated development of Step 2 (Data Cleaning, Validation, and Normalization) and Step 3 (Data Storage).
+*   **Action:** Defined a detailed PostgreSQL database schema for the `properties` table, including column selection, data types, and naming conventions, based on initial XLS data inspection and project requirements.
+*   **Action:** Implemented automatic conversion of `.xls` files to `.xlsx` in `src/data_processing/clean_data.py` using `pywin32` to ensure compatibility with `pandas` and streamline the data processing pipeline.
+*   **Action:** Enhanced logging in `src/data_processing/clean_data.py` for better visibility into the conversion and data inspection process.
+*   **Action:** Developed `src/data_processing/verify_db_setup.py` to confirm PostgreSQL database connectivity and user permissions.
+*   **Problem:** Encountered issues with `xlrd` reading `.xls` files (corruption error) and `pywin32` encountering file locking issues during conversion.
+*   **Solution:** Implemented `.xls` to `.xlsx` conversion using `pywin32` with robust error handling and COM object management. Provided detailed logging to diagnose file access issues. Recommended manual conversion as a temporary workaround if programmatic conversion fails due to persistent file locks.
+*   **Solution:** Confirmed PostgreSQL as the chosen database for data storage, aligning with scalability needs, complex query requirements, and future Supabase integration.

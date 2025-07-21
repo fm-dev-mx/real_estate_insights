@@ -10,7 +10,7 @@ LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs') # Usar el mis
 
 # --- LOGGING CONFIGURATION ---
 os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, f"db_verify_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
+LOG_FILE_PATH = os.path.join(LOG_DIR, f"db_table_creation_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,8 +26,7 @@ console_formatter = logging.Formatter('%(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 logger.addHandler(console_handler)
 
-def verify_db_connection():
-    logger.info("--- Script verify_db_setup.py iniciado ---")
+def create_properties_table():
     db_name = os.environ.get('REI_DB_NAME', 'real_estate_db')
     db_user = os.environ.get('REI_DB_USER', 'fm_asesor')
     db_password = os.environ.get('REI_DB_PASSWORD')
@@ -35,7 +34,7 @@ def verify_db_connection():
     db_port = os.environ.get('REI_DB_PORT', '5432')
 
     if not db_password:
-        logger.error("Error: La variable de entorno DB_PASSWORD no está configurada. No se puede verificar la conexión.")
+        logger.error("Error: La variable de entorno DB_PASSWORD no está configurada. No se puede crear la tabla.")
         return # Salir si no hay contraseña
 
     conn = None
@@ -48,22 +47,26 @@ def verify_db_connection():
             port=db_port
         )
         cur = conn.cursor()
-        cur.execute("SELECT 1;")
-        logger.info("Conexión a la base de datos exitosa! El usuario 'fm_asesor' puede acceder a 'real_estate_db'.")
+        logger.info("Conexión a la base de datos exitosa.")
+
+        logger.info("Ejecutando sentencia CREATE TABLE...")
+        cur.execute(create_table_sql)
+        conn.commit()
+        logger.info("✅ Tabla 'properties' creada o ya existente en la base de datos.")
         cur.close()
 
     except psycopg2.Error as e:
-        logger.error(f"Error al conectar a la base de datos: {e}")
+        logger.error(f"Error al crear la tabla en la base de datos: {e}")
         logger.error("Por favor, verifica lo siguiente:")
         logger.error("  - Que el servidor PostgreSQL esté en ejecución.")
         logger.error("  - Que la base de datos 'real_estate_db' exista.")
-        logger.error("  - Que el usuario 'fm_asesor' exista y tenga los permisos correctos.")
+        logger.error("  - Que el usuario 'fm_asesor' tenga permisos para crear tablas.")
         logger.error("  - Que la contraseña sea correcta.")
-        logger.error("  - Que el archivo pg_hba.conf de PostgreSQL permita conexiones desde 127.0.0.1 para este usuario/base de datos.")
     finally:
         if conn:
             conn.close()
-    logger.info("--- Script verify_db_setup.py finalizado ---")
+            logger.info("Conexión a la base de datos cerrada.")
+    logger.info("--- Script create_db_table.py finalizado ---")
 
 if __name__ == "__main__":
-    verify_db_connection()
+    create_properties_table()

@@ -18,9 +18,9 @@ We have defined a detailed PostgreSQL database schema for property data and are 
 
 **Script location:** `src/data_processing/clean_data.py`
 
-### Step 3: Data Storage (Planned)
+### Step 3: Data Storage (In Progress)
 
-This step involves persisting processed data into a PostgreSQL database. The database schema has been designed to support complex queries and future scalability.
+This step involves persisting processed data into a PostgreSQL database. The database schema has been designed to support complex queries and future scalability. The `clean_data.py` script now includes functionality to load the cleaned data directly into the `properties` table, handling updates for existing records.
 
 ### Future Steps:
 
@@ -49,6 +49,18 @@ You will need the browser driver (`chromedriver.exe` for Google Chrome) that mat
 2.  **Download ChromeDriver:** Go to [https://googlechromelabs.github.io/chrome-for-testing/#stable](https://googlechromelabs.github.io/chrome-for-testing/#stable).
 3.  Find the ChromeDriver version that matches your Chrome and download the `win64` file (`chromedriver.exe`).
 4.  **Place `chromedriver.exe`:** Unzip the downloaded file and place `chromedriver.exe` in the project's `src/data_collection/` directory (`C:\Code\curl\src\data_collection\`).
+
+## ⚙️ Database Configuration
+
+For data processing and storage, the project connects to a PostgreSQL database. The connection details are read from environment variables for security and flexibility. You must configure the following environment variables before running the data processing scripts:
+
+*   `REI_DB_NAME`: Name of your PostgreSQL database (e.g., `real_estate_db`)
+*   `REI_DB_USER`: Username for connecting to the database (e.g., `fm_asesor`)
+*   `REI_DB_PASSWORD`: Password for the database user.
+*   `REI_DB_HOST`: Host where your PostgreSQL database is running (e.g., `127.0.0.1` for local).
+*   `REI_DB_PORT`: Port number for the database connection (e.g., `5432`).
+
+Refer to `docs/next_steps_data_processing.md` for detailed instructions on setting up PostgreSQL and configuring these environment variables.
 
 ## 🚀 How to Configure and Run the Script (Step 1: Data Collection)
 

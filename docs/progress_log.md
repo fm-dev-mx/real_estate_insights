@@ -60,9 +60,11 @@ The inventory data collection script is now fully functional, automating the dow
 
 *   **Action:** Initiated development of Step 2 (Data Cleaning, Validation, and Normalization) and Step 3 (Data Storage).
 *   **Action:** Defined a detailed PostgreSQL database schema for the `properties` table, including column selection, data types, and naming conventions, based on initial XLS data inspection and project requirements.
-*   **Action:** Implemented automatic conversion of `.xls` files to `.xlsx` in `src/data_processing/clean_data.py` using `pywin32` to ensure compatibility with `pandas` and streamline the data processing pipeline.
-*   **Action:** Enhanced logging in `src/data_processing/clean_data.py` for better visibility into the conversion and data inspection process.
-*   **Action:** Developed `src/data_processing/verify_db_setup.py` to confirm PostgreSQL database connectivity and user permissions.
-*   **Problem:** Encountered issues with `xlrd` reading `.xls` files (corruption error) and `pywin32` encountering file locking issues during conversion.
-*   **Solution:** Implemented `.xls` to `.xlsx` conversion using `pywin32` with robust error handling and COM object management. Provided detailed logging to diagnose file access issues. Recommended manual conversion as a temporary workaround if programmatic conversion fails due to persistent file locks.
+*   **Action:** Implemented data cleaning and transformation logic in `src/data_processing/clean_data.py` to prepare data according to the defined PostgreSQL schema.
+*   **Action:** Integrated data loading functionality into `src/data_processing/clean_data.py`, enabling direct insertion/update of cleaned data into the `properties` table in PostgreSQL using `psycopg2.extras.execute_values` with `ON CONFLICT (id) DO UPDATE` strategy.
+*   **Action:** Centralized database credentials to be read from environment variables (`REI_DB_NAME`, `REI_DB_USER`, `REI_DB_PASSWORD`, `REI_DB_HOST`, `REI_DB_PORT`) in `clean_data.py`, `verify_db_setup.py`, and `create_db_table.py` for improved security and automation.
+*   **Action:** Created `src/data_processing/create_db_table.py` to programmatically create the `properties` table in PostgreSQL.
+*   **Problem:** Encountered `permission denied` error during table creation, requiring manual `GRANT` statements in `psql`.
+*   **Problem:** Addressed `UnicodeEncodeError` in console output by removing problematic characters from log messages.
+*   **Problem:** Resolved `AttributeError: 'function' object has no attribute 'write'` in `clean_data.py` by implementing a `LogStream` class to correctly redirect `df.info()` output to the logger.
 *   **Solution:** Confirmed PostgreSQL as the chosen database for data storage, aligning with scalability needs, complex query requirements, and future Supabase integration.

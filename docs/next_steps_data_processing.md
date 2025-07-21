@@ -72,7 +72,7 @@ Basado en tus requerimientos de volumen de datos, uso futuro (potencial multiusu
     *   **Ejemplo usando `psql`:**
         ```sql
         -- Conéctate como superusuario (postgres)
-        psql -U postgres
+        psql -U postgres -d postgres
 
         -- Crea una nueva base de datos para tu proyecto
         CREATE DATABASE real_estate_db;
@@ -83,43 +83,62 @@ Basado en tus requerimientos de volumen de datos, uso futuro (potencial multiusu
         -- Otorga todos los privilegios al nuevo usuario sobre la base de datos
         GRANT ALL PRIVILEGES ON DATABASE real_estate_db TO fm_asesor;
 
+        -- Otorga permisos para crear tablas en el esquema public
+        GRANT CREATE ON SCHEMA public TO fm_asesor;
+        GRANT USAGE ON SCHEMA public TO fm_asesor;
+
         -- Sal de psql
         \q
         ```
     *   **Nota:** Reemplaza `'your_strong_password'` con una contraseña segura.
 
 3.  **Definición del Esquema Inicial (Tabla `properties`):**
-    *   Necesitaremos una tabla para almacenar la información de las propiedades. Un esquema inicial podría ser:
-        ```sql
-        CREATE TABLE properties (
-            id SERIAL PRIMARY KEY,
-            address VARCHAR(255) NOT NULL,
-            city VARCHAR(100),
-            state VARCHAR(100),
-            zip_code VARCHAR(20),
-            price DECIMAL(15, 2),
-            bedrooms INTEGER,
-            bathrooms DECIMAL(4, 2),
-            area_sqft DECIMAL(10, 2),
-            property_type VARCHAR(50),
-            listing_url TEXT,
-            -- Agrega más columnas según los datos disponibles en el XLS
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-        ```
-    *   Este esquema es un punto de partida y se ajustará a medida que analicemos el contenido exacto del archivo XLS.
+    *   El esquema final para la tabla `properties` se encuentra detallado en `docs/data_schema_proposal.md`.
 
-4.  **Conexión desde Python:**
-    *   Utilizaremos la librería `psycopg2` para conectar Python con PostgreSQL.
-    *   Deberás instalarla: `pip install psycopg2-binary`
+4.  **Configuración de Variables de Entorno para la Base de Datos:**
+    Para que los scripts de Python puedan conectarse a la base de datos sin requerir interacción manual, es necesario configurar las siguientes variables de entorno:
+
+    *   `REI_DB_NAME`: Nombre de la base de datos (ej. `real_estate_db`)
+    *   `REI_DB_USER`: Nombre de usuario de la base de datos (ej. `fm_asesor`)
+    *   `REI_DB_PASSWORD`: Contraseña del usuario de la base de datos.
+    *   `REI_DB_HOST`: Host de la base de datos (ej. `127.0.0.1`)
+    *   `REI_DB_PORT`: Puerto de la base de datos (ej. `5432`)
+
+    **Cómo configurar las variables de entorno (en Windows):**
+
+    **Opción A: Para la sesión actual de la terminal (temporal)**
+
+    *   **Si usas CMD (Símbolo del sistema):**
+        ```cmd
+        set REI_DB_NAME=real_estate_db
+        set REI_DB_USER=fm_asesor
+        set REI_DB_PASSWORD=Tu_Contraseña_Real_Aqui
+        set REI_DB_HOST=127.0.0.1
+        set REI_DB_PORT=5432
+        ```
+
+    *   **Si usas PowerShell:**
+        ```powershell
+        $env:REI_DB_NAME="real_estate_db"
+        $env:REI_DB_USER="fm_asesor"
+        $env:REI_DB_PASSWORD="Tu_Contraseña_Real_Aqui"
+        $env:REI_DB_HOST="127.0.0.1"
+        $env:REI_DB_PORT="5432"
+        ```
+        (Recuerda que estas variables solo durarán mientras la ventana de la terminal esté abierta).
+
+    **Opción B: Configuración permanente (requiere reiniciar la terminal)**
+
+    1.  Busca "Editar las variables de entorno del sistema" en el menú de inicio de Windows y ábrelo.
+    2.  Haz clic en "Variables de entorno...".
+    3.  En la sección "Variables de usuario" (para tu usuario) o "Variables del sistema" (para todos los usuarios), haz clic en "Nueva..." para añadir cada variable con su nombre y valor correspondientes.
 
 ---
 
 ## 🚀 Siguientes Pasos Propuestos (Resumen):
 
-1.  **Crear la estructura de directorios:** `src/data_processing/`.
-2.  **Instalar y configurar PostgreSQL localmente** (si aún no lo has hecho), incluyendo la creación de la base de datos `real_estate_db` y un usuario.
-3.  **Implementar la lógica de limpieza inicial** en `src/data_processing/clean_data.py`, enfocándose en la lectura del XLS y la inspección básica.
-4.  **Instalar `psycopg2-binary`** para la conexión a PostgreSQL.
-5.  **Definir el esquema exacto de la tabla `properties`** una vez que hayamos inspeccionado el XLS.
+1.  **Instalar y configurar PostgreSQL localmente** (si aún no lo has hecho), incluyendo la creación de la base de datos `real_estate_db` y un usuario `fm_asesor` con los permisos adecuados.
+2.  **Configurar las variables de entorno** `REI_DB_NAME`, `REI_DB_USER`, `REI_DB_PASSWORD`, `REI_DB_HOST`, `REI_DB_PORT`.
+3.  **Ejecutar `src/data_processing/create_db_table.py`** para crear la tabla `properties` en PostgreSQL.
+4.  **Ejecutar `src/data_processing/clean_data.py`** para limpiar, transformar y cargar los datos del inventario en la base de datos.
+5.  **Verificar la integridad de los datos** en la base de datos PostgreSQL.

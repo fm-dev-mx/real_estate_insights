@@ -8,12 +8,11 @@ This document details the pending tasks and challenges for advancing the automat
 
 Currently, the **Inventory Data Collection** stage is complete and functional. We have also made significant progress in defining the schema for data storage. The following stages require development:
 
-### Step 2: Data Cleaning, Validation, and Normalization
+### Step 2: Data Cleaning, Validation, and Normalization (In Progress)
 *   **Task:** Implement data processing (e.g., with Pandas) based on the defined schema.
 *   **Task:** Define and apply cleaning and validation rules for the extracted data.
 
-### Step 3: Data Storage
-*   **Task:** Create the `properties` table in the PostgreSQL database based on the finalized schema.
+### Step 3: Data Storage (In Progress)
 *   **Task:** Implement data loading from cleaned DataFrames into the PostgreSQL database.
 
 ### Step 4: Top Property Selection
@@ -36,6 +35,6 @@ Currently, the **Inventory Data Collection** stage is complete and functional. W
 
 ## ✅ Suggested Next Steps
 
-1.  **Create the `properties` table in PostgreSQL** using the finalized schema.
-2.  **Implement data cleaning and normalization logic** in `src/data_processing/clean_data.py` to transform raw XLS data into the defined schema.
-3.  **Implement data loading** from the cleaned data into the PostgreSQL database.
+1.  **Run `src/data_processing/clean_data.py`** to process and load data into PostgreSQL.
+2.  **Verify data integrity** in the PostgreSQL database.
+3.  **Begin development of Step 4:** Top Property Selection.

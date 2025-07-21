@@ -24,6 +24,7 @@ Thumbs.db
 # Generated files
 *.log
 *.xls
+commit_message.txt
 src/data_collection/downloads/
 src/data_collection/screenshots/
 src/data_collection/logs/

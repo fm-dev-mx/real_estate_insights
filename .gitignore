@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg-info/
+.Python
+
+# Environments
+venv/
+.venv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Generated files
+*.log
+*.xls
+src/data_collection/downloads/
+src/data_collection/screenshots/
+src/data_collection/logs/
+
+# WebDriver
+src/data_collection/chromedriver.exe

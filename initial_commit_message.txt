@@ -1,0 +1,15 @@
+feat: Initial project setup for automated property insights
+
+This commit establishes the foundational structure for an n8n-based automation aimed at identifying high-potential real estate properties.
+
+Project Name: `real_estate_insights`
+
+Key features and current capabilities:
+- **Automated Data Collection (Step 1):** Python script to log into a real estate portal and download inventory data (XLS format), including submenu interaction.
+- **Modular Project Structure:** Organized `src/` into `src/data_collection/` for current functionality, with placeholders for future stages like data processing, storage, and advanced analysis.
+- **Improved Documentation:** Updated `README.md`, `docs/progress_log.md`, and `docs/pending_tasks.md` to outline the full 7-step automation flow, emphasizing the current data collection capabilities and future development. Specifically, `README.md` now correctly references `C21_PSW` for the password environment variable.
+- **Enhanced Logging & Debugging:** Implemented robust logging to file and console, along with timestamped screenshots for detailed operational insights.
+- **Code Optimization:** Refactored for readability, maintainability, and adherence to best practices; removed unnecessary dependencies.
+- **Clean Repository:** Configured `.gitignore` to exclude generated files and sensitive data.
+
+This setup provides a clear roadmap for expanding the automation to cover data cleaning, storage, property selection, and advanced analysis (PDFs, AI image analysis).

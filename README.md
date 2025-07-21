@@ -29,6 +29,99 @@ This step involves persisting processed data into a PostgreSQL database. The dat
 *   **Step 6 (Optional): AI Image Analysis:** Exploring the feasibility of using AI for extracting features from property images.
 *   **Step 7: Final Output Generation:** Creating a consolidated ranking, detailed reports, or CSV files with selected properties.
 
+## 📊 System Diagrams
+
+These diagrams provide a visual roadmap of the Real Estate Insights project, detailing both the current state of implementation and future development steps.
+
+### 🗺️ Overall System Architecture
+
+This diagram illustrates the high-level components of the entire system, from data acquisition to final output.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram provides a high-level overview of the entire Real Estate Insights system.
+%% It shows the main components and their interactions, from data collection to analysis.
+
+    subgraph Data Collection
+        DC[download_inventory.py]
+    end
+
+    subgraph Data Processing
+        DP[clean_data.py]
+    end
+
+    subgraph Data Storage
+        DB[(PostgreSQL Database)]
+    end
+
+    subgraph Future Modules
+        PS[Property Selection]
+        PA[PDF Analysis]
+        AI[AI Image Analysis]
+        FO[Final Output Generation]
+    end
+
+    User --> DC
+    DC --> RawExcel[Raw Excel Files]
+    RawExcel --> DP
+    DP --> DB
+    DB --> PS
+    PS --> PA
+    PA --> AI
+    AI --> FO
+    FO --> User
+```
+
+### 🚀 Current ETL Process State
+
+This diagram details the currently implemented parts of the ETL (Extract, Transform, Load) pipeline, showing the scripts and their interactions.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram details the current implementation of the ETL process.
+%% It highlights the specific scripts and files involved in data collection, cleaning, and loading into the database.
+
+    subgraph Implemented Modules
+        A[User/Agent] --> B(src/data_collection/download_inventory.py)
+        B --> C{Raw Excel Files<br>src/data_collection/downloads/}
+        C --> D(src/data_processing/clean_data.py)
+        D -- Cleans & Transforms --> E(PostgreSQL Database)
+        E -- Credentials via --> F[.env file]
+        F -- Verified by --> G(src/data_processing/verify_db_setup.py)
+    end
+
+    subgraph Key Interactions
+        B -- Downloads --> C
+        D -- Loads Data --> E
+        E -- Reads Config --> F
+        G -- Tests Connection --> E
+    end
+```
+
+### ➡️ Future Development Steps
+
+This diagram outlines the planned future modules and their sequence in the project roadmap.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram outlines the planned future modules and their sequence in the project roadmap.
+
+    subgraph Future Development Steps
+        DB[(PostgreSQL Database)] --> PS[Step 4: Top Property Selection]
+        PS --> PA[Step 5: PDF Analysis]
+        PA --> AI[Step 6: AI Image Analysis (Optional)]
+        AI --> FO[Step 7: Final Output Generation]
+        FO --> User[User/Agent]
+    end
+
+    subgraph Details
+        PS -- Criteria --> Config[Configuration Files]
+        PA -- Extracts Data --> PDF[Property Brochures (PDF)]
+        AI -- Analyzes --> Images[Property Images]
+        FO -- Generates --> Reports[Reports/CSV/Dashboards]
+    end
+```
+
 ## ⚙️ Dependencies and Installation (Step 1: Data Collection)
 
 The data collection script (`src/data_collection/download_inventory.py`) requires the following Python library:

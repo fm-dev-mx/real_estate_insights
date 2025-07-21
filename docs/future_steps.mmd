@@ -1,0 +1,15 @@
+graph TD
+    subgraph Future Development Steps
+        DB[(PostgreSQL Database)] --> PS[Step 4: Top Property Selection]
+        PS --> PA[Step 5: PDF Analysis]
+        PA --> AI[Step 6: AI Image Analysis (Optional)]
+        AI --> FO[Step 7: Final Output Generation]
+        FO --> User[User/Agent]
+    end
+
+    subgraph Details
+        PS -- Criteria --> Config[Configuration Files]
+        PA -- Extracts Data --> PDF[Property Brochures (PDF)]
+        AI -- Analyzes --> Images[Property Images]
+        FO -- Generates --> Reports[Reports/CSV/Dashboards]
+    end

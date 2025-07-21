@@ -1,0 +1,29 @@
+graph TD
+    subgraph Data Collection
+        DC[download_inventory.py]
+    end
+
+    subgraph Data Processing
+        DP[clean_data.py]
+    end
+
+    subgraph Data Storage
+        DB[(PostgreSQL Database)]
+    end
+
+    subgraph Future Modules
+        PS[Property Selection]
+        PA[PDF Analysis]
+        AI[AI Image Analysis]
+        FO[Final Output Generation]
+    end
+
+    User --> DC
+    DC --> RawExcel[Raw Excel Files]
+    RawExcel --> DP
+    DP --> DB
+    DB --> PS
+    PS --> PA
+    PA --> AI
+    AI --> FO
+    FO --> User

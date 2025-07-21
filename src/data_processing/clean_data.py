@@ -1,17 +1,19 @@
-Este script ETL (Extract, Transform, Load) se encarga de procesar archivos de inventario de bienes raíces,
+
+
+"""Este script ETL (Extract, Transform, Load) se encarga de procesar archivos de inventario de bienes raíces,
 limpiar y transformar los datos, y cargarlos en una base de datos PostgreSQL.
 
 Funcionalidades principales:
 - Búsqueda y conversión automática de archivos .xls a .xlsx.
-- Conexión segura a la base de datos usando variables de entorno.
+- Conexión segura a la base de datos usando variables de entorno (`.env`).
 - Limpieza y normalización de datos (renombrado de columnas, conversión de tipos, etc.).
 - Carga de datos en la base de datos con manejo de conflictos (actualización de registros existentes).
 - Registro detallado de operaciones y errores en un archivo de log.
 
 Uso:
-1.  Asegurarse de que las variables de entorno de la base de datos (REI_DB_*) estén configuradas.
+1.  Asegurarse de que las variables de entorno de la base de datos (REI_DB_*) estén configuradas en un archivo `.env` en la raíz del proyecto.
 2.  Colocar el archivo de inventario (.xls o .xlsx) en el directorio 'src/data_collection/downloads'.
-3.  Ejecutar el script desde el directorio 'src/data_processing': `py clean_data.py`
+3.  Ejecutar el script desde el directorio 'src/data_processing': 'py clean_data.py'
 """
 
 import io
@@ -23,6 +25,9 @@ import logging
 from datetime import datetime
 import psycopg2
 from psycopg2 import extras
+from dotenv import load_dotenv
+
+load_dotenv() # Cargar variables de entorno desde .env
 
 # --- CONSTANTS ---
 DB_COLUMNS = [
@@ -239,12 +244,12 @@ def load_data_to_postgresql(df, db_name, db_user, db_host, db_port, db_password)
         update_set_clause = ', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])
         update_set_clause += ", updated_at = CURRENT_TIMESTAMP"
 
-        insert_sql = f"""
+        insert_sql = f'''
         INSERT INTO properties ({', '.join(columns)})
         VALUES %s
         ON CONFLICT (id) DO UPDATE SET
             {update_set_clause}
-        """
+        '''
 
         logger.info(f"[LOAD] Insertando/actualizando {len(data_to_insert)} registros en la tabla 'properties'.")
         extras.execute_values(cur, insert_sql, data_to_insert, page_size=1000)
@@ -296,12 +301,50 @@ def find_target_excel_file(directory):
     
     return None
 
-def main():    logger.info("--- Script clean_data.py iniciado ---")    # --- Verificación inicial de la conexión a la base de datos ---    logger.info("[MAIN] Realizando verificación inicial de la conexión a la base de datos...")    conn_check = None    try:        if not DB_PASSWORD:            raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")                conn_check = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-        )        logger.info("[MAIN] Verificación de conexión a la base de datos exitosa.")        conn_check.close()    except (psycopg2.Error, ValueError) as e:        logger.error(f"[MAIN] No se pudo establecer conexión con la base de datos: {e}")        logger.error("[MAIN] El script no continuará. Por favor, verifique la configuración de la base de datos y las variables de entorno.")        return # Salir del script si la conexión falla
+def main():
+    logger.info("--- Script clean_data.py iniciado ---")
 
-    target_file = find_target_excel_file(DOWNLOAD_DIR)    
-    if target_file:        cleaned_df = clean_and_transform_data(target_file)        if cleaned_df is not None:            logger.info("\n--- Primeras 5 filas del DataFrame limpio ---")            logger.info(cleaned_df.head().to_string())            logger.info("\n--- Información general del DataFrame limpio ---")            buffer = io.StringIO()            cleaned_df.info(buf=buffer)            logger.info(buffer.getvalue())            logger.info("\n--- Conteo de valores nulos del DataFrame limpio ---")            logger.info(cleaned_df.isnull().sum().to_string())            # --- Cargar datos a PostgreSQL ---            load_data_to_postgresql(cleaned_df, DB_NAME, DB_USER, DB_HOST, DB_PORT, DB_PASSWORD)        else:            logger.error("[MAIN] No se pudo obtener un DataFrame limpio.")    else:        logger.info("[MAIN] No se encontró un archivo Excel para procesar.")
+    # --- Verificación inicial de la conexión a la base de datos ---
+    logger.info("[MAIN] Realizando verificación inicial de la conexión a la base de datos...")
+    conn_check = None
+    try:
+        if not DB_PASSWORD:
+            logger.error("Error: La variable de entorno REI_DB_PASSWORD no está configurada.")
+            raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")
+        else:
+            logger.info(f"Contraseña de la base de datos leída. Longitud: {len(DB_PASSWORD)}")
+        
+        conn_check = psycopg2.connect(
+            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+        )
+        logger.info("[MAIN] Verificación de conexión a la base de datos exitosa.")
+        conn_check.close()
+    except (psycopg2.Error, ValueError) as e:
+        logger.error(f"[MAIN] No se pudo establecer conexión con la base de datos: {e}")
+        logger.error("[MAIN] El script no continuará. Por favor, verifique la configuración de la base de datos y las variables de entorno.")
+        return # Salir del script si la conexión falla
+
+    target_file = find_target_excel_file(DOWNLOAD_DIR)
+    
+    if target_file:
+        cleaned_df = clean_and_transform_data(target_file)
+        if cleaned_df is not None:
+            logger.info("\n--- Primeras 5 filas del DataFrame limpio ---")
+            logger.info(cleaned_df.head().to_string())
+            logger.info("\n--- Información general del DataFrame limpio ---")
+            buffer = io.StringIO()
+            cleaned_df.info(buf=buffer)
+            logger.info(buffer.getvalue())
+            logger.info("\n--- Conteo de valores nulos del DataFrame limpio ---")
+            logger.info(cleaned_df.isnull().sum().to_string())
+
+            # --- Cargar datos a PostgreSQL ---
+            load_data_to_postgresql(cleaned_df, DB_NAME, DB_USER, DB_HOST, DB_PORT, DB_PASSWORD)
+
+        else:
+            logger.error("[MAIN] No se pudo obtener un DataFrame limpio.")
+    else:
+        logger.info("[MAIN] No se encontró un archivo Excel para procesar.")
 
     logger.info("--- Script clean_data.py finalizado ---")
 

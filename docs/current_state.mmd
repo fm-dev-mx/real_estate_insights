@@ -1,0 +1,16 @@
+graph TD
+    subgraph Implemented Modules
+        A[User/Agent] --> B(src/data_collection/download_inventory.py)
+        B --> C{Raw Excel Files<br>src/data_collection/downloads/}
+        C --> D(src/data_processing/clean_data.py)
+        D -- Cleans & Transforms --> E(PostgreSQL Database)
+        E -- Credentials via --> F[.env file]
+        F -- Verified by --> G(src/data_processing/verify_db_setup.py)
+    end
+
+    subgraph Key Interactions
+        B -- Downloads --> C
+        D -- Loads Data --> E
+        E -- Reads Config --> F
+        G -- Tests Connection --> E
+    end

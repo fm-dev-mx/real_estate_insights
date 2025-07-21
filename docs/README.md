@@ -2,6 +2,99 @@
 
 Este script de Python automatiza el proceso de inicio de sesión en el portal de Century 21 México y la descarga del inventario de propiedades.
 
+## 📊 Diagramas del Sistema
+
+Estos diagramas proporcionan una hoja de ruta visual del proyecto Real Estate Insights, detallando tanto el estado actual de la implementación como los pasos de desarrollo futuros.
+
+### 🗺️ Arquitectura General del Sistema
+
+Este diagrama ilustra los componentes de alto nivel de todo el sistema, desde la adquisición de datos hasta la salida final.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram provides a high-level overview of the entire Real Estate Insights system.
+%% It shows the main components and their interactions, from data collection to analysis.
+
+    subgraph Data Collection
+        DC[download_inventory.py]
+    end
+
+    subgraph Data Processing
+        DP[clean_data.py]
+    end
+
+    subgraph Data Storage
+        DB[(PostgreSQL Database)]
+    end
+
+    subgraph Future Modules
+        PS[Property Selection]
+        PA[PDF Analysis]
+        AI[AI Image Analysis]
+        FO[Final Output Generation]
+    end
+
+    User --> DC
+    DC --> RawExcel[Raw Excel Files]
+    RawExcel --> DP
+    DP --> DB
+    DB --> PS
+    PS --> PA
+    PA --> AI
+    AI --> FO
+    FO --> User
+```
+
+### 🚀 Estado Actual del Proceso ETL
+
+Este diagrama detalla las partes actualmente implementadas de la tubería ETL (Extraer, Transformar, Cargar), mostrando los scripts y sus interacciones.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram details the current implementation of the ETL process.
+%% It highlights the specific scripts and files involved in data collection, cleaning, and loading into the database.
+
+    subgraph Implemented Modules
+        A[User/Agent] --> B(src/data_collection/download_inventory.py)
+        B --> C{Raw Excel Files<br>src/data_collection/downloads/}
+        C --> D(src/data_processing/clean_data.py)
+        D -- Cleans & Transforms --> E(PostgreSQL Database)
+        E -- Credentials via --> F[.env file]
+        F -- Verified by --> G(src/data_processing/verify_db_setup.py)
+    end
+
+    subgraph Key Interactions
+        B -- Downloads --> C
+        D -- Loads Data --> E
+        E -- Reads Config --> F
+        G -- Tests Connection --> E
+    end
+```
+
+### ➡️ Pasos de Desarrollo Futuros
+
+Este diagrama describe los módulos futuros planificados y su secuencia en la hoja de ruta del proyecto.
+
+```mermaid
+%%{init: {'theme':'neutral'}}
+%% This diagram outlines the planned future modules and their sequence in the project roadmap.
+
+    subgraph Future Development Steps
+        DB[(PostgreSQL Database)] --> PS[Step 4: Top Property Selection]
+        PS --> PA[Step 5: PDF Analysis]
+        PA --> AI[Step 6: AI Image Analysis (Optional)]
+        AI --> FO[Step 7: Final Output Generation]
+        FO --> User[User/Agent]
+    end
+
+    subgraph Details
+        PS -- Criteria --> Config[Configuration Files]
+        PA -- Extracts Data --> PDF[Property Brochures (PDF)]
+        AI -- Analyzes --> Images[Property Images]
+        FO -- Generates --> Reports[Reports/CSV/Dashboards]
+    end
+```
+
 ## 🎯 Qué hace el script
 
 1.  Navega a la página de inicio de sesión de Century 21 Online (`https://plus.21onlinemx.com/login2`).

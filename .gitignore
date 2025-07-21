@@ -31,3 +31,4 @@ src/data_collection/logs/
 
 # WebDriver
 src/data_collection/chromedriver.exe
+.env

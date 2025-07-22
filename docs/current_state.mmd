@@ -5,12 +5,17 @@ graph TD
         C --> D(src/data_processing/clean_data.py)
         D -- Cleans & Transforms --> E(PostgreSQL Database)
         E -- Credentials via --> F[.env file]
-        F -- Verified by --> G(src/data_processing/verify_db_setup.py)
+        E -- Queries --> J(src/visualization/dashboard.py)
+        J -- Displays Interactive --> K[Dashboard<br>(Interactive Filters)]
     end
 
     subgraph Key Interactions
         B -- Downloads --> C
         D -- Loads Data --> E
         E -- Reads Config --> F
-        G -- Tests Connection --> E
+        F -- Provides Config --> J
+    end
+
+    subgraph Database Setup
+        L[src/db_setup/create_db_table.py] --> E
     end

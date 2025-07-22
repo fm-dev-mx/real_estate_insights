@@ -11,8 +11,11 @@ graph TD
         DB[(PostgreSQL Database)]
     end
 
+    subgraph Visualization
+        VI[dashboard.py]
+    end
+
     subgraph Future Modules
-        PS[Property Selection]
         PA[PDF Analysis]
         AI[AI Image Analysis]
         FO[Final Output Generation]
@@ -22,8 +25,9 @@ graph TD
     DC --> RawExcel[Raw Excel Files]
     RawExcel --> DP
     DP --> DB
-    DB --> PS
-    PS --> PA
+    DB --> VI
+    User --> VI
+    DB --> PA
     PA --> AI
     AI --> FO
     FO --> User

@@ -311,8 +311,6 @@ def main():
         if not DB_PASSWORD:
             logger.error("Error: La variable de entorno REI_DB_PASSWORD no está configurada.")
             raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")
-        else:
-            logger.info(f"Contraseña de la base de datos leída. Longitud: {len(DB_PASSWORD)}")
         
         conn_check = psycopg2.connect(
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT

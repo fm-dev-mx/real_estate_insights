@@ -149,13 +149,15 @@ You will need the browser driver (`chromedriver.exe` for Google Chrome) that mat
 
 ### Database Configuration
 
-For data processing and storage, the project connects to a PostgreSQL database. The connection details are read from environment variables for security and flexibility. You must configure the following environment variables in a `.env` file in the project root before running the data processing scripts:
+For data processing and storage, the project connects to a PostgreSQL database. The connection details are read from environment variables for security and flexibility. You must configure the following environment variables in a `.env` file in the project root before running the data processing scripts.
 
 *   `REI_DB_NAME`: Name of your PostgreSQL database (e.g., `real_estate_db`)
 *   `REI_DB_USER`: Username for connecting to the database (e.g., `fm_asesor`)
 *   `REI_DB_PASSWORD`: Password for the database user.
 *   `REI_DB_HOST`: Host where your PostgreSQL database is running (e.g., `127.0.0.1` for local).
 *   `REI_DB_PORT`: Port number for the database connection (e.g., `5432`).
+
+To set up the database table, run the script located at `src/db_setup/create_db_table.py`.
 
 Refer to `.env.example` for a template of these variables, including property selection parameters.
 
@@ -197,14 +199,14 @@ To run it:
 python src/data_processing/clean_data.py
 ```
 
-### Property Selection Script (`src/data_processing/select_properties.py`)
+### Visualization Script (`src/visualization/dashboard.py`)
 
-This script filters properties from the database based on criteria defined in your `.env` file.
+This Streamlit application provides an interactive dashboard to visualize the selected properties. It uses the property selection criteria defined in your `.env` file.
 
 To run it:
 
 ```bash
-python src/data_processing/select_properties.py
+streamlit run src/visualization/dashboard.py
 ```
 
 ## ⚠️ Considerations and Common Errors

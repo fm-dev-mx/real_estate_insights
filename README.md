@@ -95,12 +95,12 @@ This diagram details the currently implemented parts of the ETL (Extract, Transf
 graph TD
     subgraph Implemented Modules
         A[User/Agent] --> B(src/data_collection/download_inventory.py)
-        B --> C{Raw Excel Files<br>src/data_collection/downloads/}
+        B --> C{Raw Excel Files}
         C --> D(src/data_processing/clean_data.py)
         D -- Cleans & Transforms --> E(PostgreSQL Database)
         E -- Credentials via --> F[.env file]
         E -- Queries --> J(src/visualization/dashboard.py)
-        J -- Displays Interactive --> K[Dashboard<br>(Interactive Filters)]
+        J -- Displays Interactive --> K[Dashboard Filters]
     end
 
     subgraph Key Interactions
@@ -123,13 +123,13 @@ This diagram outlines the planned future modules and their sequence in the proje
 graph TD
     subgraph Future Development Steps
         DB[(PostgreSQL Database)] --> PA[Step 5: PDF Analysis]
-        PA --> AI[Step 6: AI Image Analysis (Optional)]
+        PA --> AI[Step 6: AI Image Analysis]
         AI --> FO[Step 7: Final Output Generation]
         FO --> User[User/Agent]
     end
 
     subgraph Details
-        PA -- Extracts Data --> PDF[Property Brochures (PDF)]
+        PA -- Extracts Data --> PDF[Property Brochures]
         AI -- Analyzes --> Images[Property Images]
         FO -- Generates --> Reports[Reports/CSV/Dashboards]
     end

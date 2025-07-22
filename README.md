@@ -18,16 +18,17 @@ We have defined a detailed PostgreSQL database schema for property data and are 
 
 **Script location:** `src/data_processing/clean_data.py`
 
-### Step 3: Data Storage (In Progress)
+### Step 3: Data Storage (Complete)
 
 This step involves persisting processed data into a PostgreSQL database. The database schema has been designed to support complex queries and future scalability. The `clean_data.py` script now includes functionality to load the cleaned data directly into the `properties` table, handling updates for existing records.
 
+### Step 4: Property Selection (New Script)
+
+This new script (`src/data_processing/select_properties.py`) is responsible for filtering and selecting high-potential properties based on configurable criteria defined in the `.env` file. It queries the cleaned data directly from the PostgreSQL database.
+
 ### Future Steps:
 
-*   **Step 4: Top Property Selection:** Filtering and selecting high-potential properties based on configurable criteria.
-*   **Step 5: PDF Analysis:** Extracting key data from property brochures in PDF format.
-*   **Step 6 (Optional): AI Image Analysis:** Exploring the feasibility of using AI for extracting features from property images.
-*   **Step 7: Final Output Generation:** Creating a consolidated ranking, detailed reports, or CSV files with selected properties.
+Refer to the "Future Development Steps" diagram below for a detailed roadmap of upcoming modules.
 
 ## 📊 System Diagrams
 
@@ -122,30 +123,33 @@ This diagram outlines the planned future modules and their sequence in the proje
     end
 ```
 
-## ⚙️ Dependencies and Installation (Step 1: Data Collection)
+## ⚙️ Dependencies and Installation
 
-The data collection script (`src/data_collection/download_inventory.py`) requires the following Python library:
+### Data Collection Module (`src/data_collection/download_inventory.py`)
+
+The data collection script requires the following Python library:
 
 *   `selenium`: For browser automation.
+*   `python-dotenv`: For loading environment variables from a `.env` file.
 
-To install it, run the following command from the project root:
+To install them, run the following command from the project root:
 
 ```bash
 pip install -r src/data_collection/requirements.txt
 ```
 
-### WebDriver
+#### WebDriver
 
 You will need the browser driver (`chromedriver.exe` for Google Chrome) that matches your Chrome browser version.
 
 1.  **Check your Chrome version:** Open Chrome, go to `chrome://version`, and note the major version (e.g., `126`).
 2.  **Download ChromeDriver:** Go to [https://googlechromelabs.github.io/chrome-for-testing/#stable](https://googlechromelabs.github.io/chrome-for-testing/#stable).
 3.  Find the ChromeDriver version that matches your Chrome and download the `win64` file (`chromedriver.exe`).
-4.  **Place `chromedriver.exe`:** Unzip the downloaded file and place `chromedriver.exe` in the project's `src/data_collection/` directory (`C:\Code\curl\src\data_collection\`).
+4.  **Place `chromedriver.exe`:** Unzip the downloaded file and place `chromedriver.exe` in the project's `src/data_collection/` directory (`C:\Codeeal_estate_insights\src\data_collection`).
 
-## ⚙️ Database Configuration
+### Database Configuration
 
-For data processing and storage, the project connects to a PostgreSQL database. The connection details are read from environment variables for security and flexibility. You must configure the following environment variables before running the data processing scripts:
+For data processing and storage, the project connects to a PostgreSQL database. The connection details are read from environment variables for security and flexibility. You must configure the following environment variables in a `.env` file in the project root before running the data processing scripts:
 
 *   `REI_DB_NAME`: Name of your PostgreSQL database (e.g., `real_estate_db`)
 *   `REI_DB_USER`: Username for connecting to the database (e.g., `fm_asesor`)
@@ -153,9 +157,11 @@ For data processing and storage, the project connects to a PostgreSQL database. 
 *   `REI_DB_HOST`: Host where your PostgreSQL database is running (e.g., `127.0.0.1` for local).
 *   `REI_DB_PORT`: Port number for the database connection (e.g., `5432`).
 
-Refer to `docs/next_steps_data_processing.md` for detailed instructions on setting up PostgreSQL and configuring these environment variables.
+Refer to `.env.example` for a template of these variables, including property selection parameters.
 
-## 🚀 How to Configure and Run the Script (Step 1: Data Collection)
+## 🚀 How to Configure and Run Scripts
+
+### Data Collection Script (`src/data_collection/download_inventory.py`)
 
 1.  **Configure Your Credentials:**
     The script reads the username and password from environment variables for security. You must configure them in your terminal **before running the script**.
@@ -173,7 +179,7 @@ Refer to `docs/next_steps_data_processing.md` for detailed instructions on setti
     **Ensure you replace `YOUR_REAL_USERNAME` and `YOUR_REAL_PASSWORD` with your actual credentials.**
 
 2.  **Run the Script:**
-    Open your terminal, navigate to the script's directory (`C:\Code\curl\src\data_collection\`) and run:
+    Open your terminal, navigate to the script's directory (`C:\Codeeal_estate_insights\src\data_collection`) and run:
 
     ```bash
     python download_inventory.py
@@ -181,20 +187,47 @@ Refer to `docs/next_steps_data_processing.md` for detailed instructions on setti
 
     The script will create a `downloads` folder in the same directory and save `inventario.xls` there. It will also create a `logs` folder for execution records and a `screenshots` folder for debugging screenshots.
 
+### Data Processing Script (`src/data_processing/clean_data.py`)
+
+This script cleans, transforms, and loads property data into the PostgreSQL database. It uses the database configuration from your `.env` file.
+
+To run it:
+
+```bash
+python src/data_processing/clean_data.py
+```
+
+### Property Selection Script (`src/data_processing/select_properties.py`)
+
+This script filters properties from the database based on criteria defined in your `.env` file.
+
+To run it:
+
+```bash
+python src/data_processing/select_properties.py
+```
+
 ## ⚠️ Considerations and Common Errors
 
-*   **Environment Variables Not Configured:** If the script does not find `C21_USERNAME` or `C21_PSW`.
-    *   **Solution:** Ensure you configure the environment variables in the same terminal session from which you run the script.
+*   **Environment Variables Not Configured:** If the script does not find required environment variables (e.g., `C21_USERNAME`, `C21_PSW`, or `REI_DB_*`).
+    *   **Solution:** Ensure you configure the environment variables in the same terminal session from which you run the script, or correctly set them in your `.env` file.
 
 *   **WebDriver Error:** Issues with `chromedriver.exe` (not found, incorrect version, etc.).
-    *   **Solution:** Verify that `chromedriver.exe` is in `src/data_collection/` and its version matches your Chrome.
+    *   **Solution:** Verify that `chromedriver.exe` is in `src/data_collection/` and its version matches your Chrome. Restart your terminal and try again.
 
 *   **Web Portal Changes:** The real estate portal may change its HTML structure or navigation flow, which might require adjustments to the script.
     *   **Solution:** Review detailed logs in `src/data_collection/logs/` and screenshots in `src/data_collection/screenshots/` to identify the exact point of failure. You might need to adjust XPath selectors in `src/data_collection/download_inventory.py`.
 
+*   **Login Failed:** If the login to the real estate portal fails.
+    *   **Causa:** Incorrect credentials, or the website has changed its login process.
+    *   **Solution:** Verify your credentials. If they are correct, the website might have implemented new validations or hidden fields. A deeper debugging might be needed.
+
+*   **Database Connection Error:** If the script cannot connect to the PostgreSQL database.
+    *   **Solution:** Verify your database credentials in the `.env` file, ensure the PostgreSQL server is running, and check your `pg_hba.conf` file for correct access permissions.
+
 ## 💡 Usage Recommendations
 
-*   **Credentials:** Use environment variables for enhanced security.
-*   **Maintenance:** The script may require periodic updates due to changes in the web portal.
+*   **Credentials:** Use `.env` files and environment variables for enhanced security.
+*   **Maintenance:** Scripts interacting with external websites may require periodic updates due to changes in the web portal.
 *   **Responsible Use:** Use this script in accordance with the portal's terms of service.
 *   **Debugging:** Logs and screenshots are key tools for troubleshooting.

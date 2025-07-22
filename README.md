@@ -37,11 +37,13 @@ This step involves using a Streamlit dashboard to interactively filter and visua
     *   Removed columns: `latitud`, `longitud`, `codigo_postal`, `comision_compartir_externas`, `cocina`, `fecha_creacion`, `fecha_modificacion`, `apellido_paterno_agente`, `apellido_materno_agente`.
 *   **Missing Data Table:** An additional table at the bottom of the dashboard highlights properties with incomplete key fields (e.g., bathrooms, meters, description) for easier review and data completion.
 
-**Dashboard location:** `src/visualization/dashboard.py`
+**Dashboard location:** `src/visualization/dashboard_app.py`
 
 ### Future Steps:
 
 For a detailed discussion on the project's future roadmap and next steps, please refer to [docs/next_steps_project_roadmap.md](docs/next_steps_project_roadmap.md).
+
+For a comprehensive overview of the project's modular architecture and design patterns, refer to [docs/architecture_design.md](docs/architecture_design.md).
 
 ## 📊 System Diagrams
 

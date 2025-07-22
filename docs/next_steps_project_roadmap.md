@@ -4,15 +4,17 @@
 
 ---
 
+**Nota:** Para una descripción detallada de la arquitectura modular propuesta y los patrones de diseño, consulte [docs/architecture_design.md](docs/architecture_design.md).
+
 ## 1. Recomendaciones
 
 Con la implementación del dashboard interactivo en Streamlit, el proyecto ha alcanzado un punto donde podemos simplificar significativamente nuestra arquitectura y centralizar gran parte de la lógica de análisis y visualización.
 
-Aquí nuestras recomendaciones clave:
+Aquí nuestras recomendaciones clave, alineadas con la nueva arquitectura modular:
 
 *   **Consolidar Análisis y Selección en Streamlit:**
     *   El dashboard de Streamlit ya es capaz de cargar y filtrar propiedades directamente desde la base de datos utilizando los parámetros definidos en el `.env` (y ahora de forma interactiva). Esto hace que scripts externos como `select_properties.py` sean redundantes para el flujo de trabajo interactivo.
-    *   *Recomendamos que toda la lógica de selección y filtrado de propiedades para el análisis interactivo resida dentro del `dashboard.py` o en módulos auxiliares a los que el dashboard acceda.*
+    *   *Recomendamos que toda la lógica de selección y filtrado de propiedades para el análisis interactivo resida dentro del `dashboard_app.py` o en módulos auxiliares a los que el dashboard acceda.*
 
 *   **Integrar Funcionalidades de Exportación Directa desde el Dashboard:**
     *   Dado que el dashboard ya muestra las propiedades filtradas, es el lugar ideal para permitir al usuario exportar estos resultados.
@@ -22,14 +24,8 @@ Aquí nuestras recomendaciones clave:
     *   El siguiente paso lógico en el enriquecimiento de datos es el análisis de PDFs. Si bien la extracción de texto puede ser intensiva, la interfaz para cargar PDFs y visualizar los resultados de su análisis podría integrarse en el dashboard.
     *   *Proponemos añadir una sección o funcionalidad en el dashboard que permita al usuario cargar archivos PDF de propiedades, iniciar su procesamiento (extracción de datos) y, posteriormente, visualizar los datos extraídos y cómo estos enriquecen la información de las propiedades existentes.*
 
-*   **Simplificar la Arquitectura Eliminando Scripts Redundantes:**
-    *   Una arquitectura más simple es más fácil de mantener y entender.
-    *   *Recomendamos eliminar scripts que dupliquen funcionalidades ya presentes o que puedan ser absorbidas por el dashboard (ej. `select_properties.py`, `verify_db_setup.py` si su única función era la verificación de conexión que ahora hace el dashboard al inicio).*
-    *   *Mantener scripts de un solo uso o de configuración (como `create_db_table.py`) en un directorio dedicado (`src/db_setup/`) para distinguirlos del flujo de ejecución regular.*
-
-*   **Centralizar la Lógica de Acceso a Datos:**
-    *   Para mantener el código limpio y evitar la duplicación, la lógica de conexión a la base de datos y la construcción de consultas SQL (basadas en filtros) debería estar bien encapsulada.
-    *   *Considerar la creación de un módulo `src/data_access/database.py` que contenga funciones para conectar a la DB y ejecutar consultas parametrizadas. El dashboard y futuros scripts de análisis de PDF/imágenes podrían reutilizar estas funciones.*
+*   **Simplificar la Arquitectura y Centralizar Lógica (Ver `architecture_design.md` para detalles):**
+    *   La nueva arquitectura modular busca eliminar scripts redundantes y centralizar la lógica de acceso a datos y procesamiento. Esto se detalla en el documento de diseño de arquitectura.
 
 ---
 

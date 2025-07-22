@@ -1,8 +1,8 @@
 # Automated Real Estate Property Insights
 
-This project aims to build a comprehensive n8n automation to identify real estate properties with high investment potential. The process involves automated data extraction, processing, analysis, and generating a final output with the most relevant properties.
+This project aims to build a comprehensive automation to identify real estate properties with high investment potential. The process involves automated data extraction, processing, analysis, and generating a final output with the most relevant properties.
 
-## 🎯 Automation Flow (n8n)
+## 🎯 Automation Flow
 
 The complete automation flow consists of the following steps:
 
@@ -12,7 +12,7 @@ This Python script automates the login process to a real estate portal and the d
 
 **Script location:** `src/data_collection/download_inventory.py`
 
-### Step 2: Data Cleaning, Validation, and Normalization (In Progress)
+### Step 2: Data Cleaning, Validation, and Normalization (Complete)
 
 We have defined a detailed PostgreSQL database schema for property data and are now focusing on implementing the data cleaning, validation, and normalization logic. This involves processing the downloaded Excel files, cleaning inconsistencies, normalizing data formats, and preparing data for storage.
 
@@ -22,13 +22,26 @@ We have defined a detailed PostgreSQL database schema for property data and are 
 
 This step involves persisting processed data into a PostgreSQL database. The database schema has been designed to support complex queries and future scalability. The `clean_data.py` script now includes functionality to load the cleaned data directly into the `properties` table, handling updates for existing records.
 
-### Step 4: Property Selection (New Script)
+### Step 4: Interactive Property Selection & Visualization (Implemented)
 
-This new script (`src/data_processing/select_properties.py`) is responsible for filtering and selecting high-potential properties based on configurable criteria defined in the `.env` file. It queries the cleaned data directly from the PostgreSQL database.
+This step involves using a Streamlit dashboard to interactively filter and visualize properties based on user-defined criteria. The dashboard has been enhanced with the following features:
+
+*   **Unified Price Filter:** A single slider for minimum and maximum price, with increments of $50,000. The range is from $500,000 to $20,000,000, with default values of $1,500,000 and $3,500,000 (configurable via `.env`).
+*   **Property Status Filter:** Defaults to "enPromocion", with options to include "conIntencion" and "vendidas".
+*   **Exclusivity and Option Filter:** Filters properties based on their `tipo_contrato` (e.g., "Exclusiva", "Opcion"), allowing for combined selection.
+*   **Minimum Commission Filter:** A numerical input with a default of 3%.
+*   **Improved Results Table:**
+    *   New "dias_en_mercado" column (days since property was listed).
+    *   Rounded values for construction and land meters.
+    *   Unified "baños_totales" column (including half-bathrooms).
+    *   Removed columns: `latitud`, `longitud`, `codigo_postal`, `comision_compartir_externas`, `cocina`, `fecha_creacion`, `fecha_modificacion`, `apellido_paterno_agente`, `apellido_materno_agente`.
+*   **Missing Data Table:** An additional table at the bottom of the dashboard highlights properties with incomplete key fields (e.g., bathrooms, meters, description) for easier review and data completion.
+
+**Dashboard location:** `src/visualization/dashboard.py`
 
 ### Future Steps:
 
-Refer to the "Future Development Steps" diagram below for a detailed roadmap of upcoming modules.
+For a detailed discussion on the project's future roadmap and next steps, please refer to [docs/next_steps_project_roadmap.md](docs/next_steps_project_roadmap.md).
 
 ## 📊 System Diagrams
 
@@ -39,10 +52,7 @@ These diagrams provide a visual roadmap of the Real Estate Insights project, det
 This diagram illustrates the high-level components of the entire system, from data acquisition to final output.
 
 ```mermaid
-%%{init: {'theme':'neutral'}}
-%% This diagram provides a high-level overview of the entire Real Estate Insights system.
-%% It shows the main components and their interactions, from data collection to analysis.
-
+graph TD
     subgraph Data Collection
         DC[download_inventory.py]
     end
@@ -55,8 +65,11 @@ This diagram illustrates the high-level components of the entire system, from da
         DB[(PostgreSQL Database)]
     end
 
+    subgraph Visualization
+        VI[dashboard.py]
+    end
+
     subgraph Future Modules
-        PS[Property Selection]
         PA[PDF Analysis]
         AI[AI Image Analysis]
         FO[Final Output Generation]
@@ -66,8 +79,9 @@ This diagram illustrates the high-level components of the entire system, from da
     DC --> RawExcel[Raw Excel Files]
     RawExcel --> DP
     DP --> DB
-    DB --> PS
-    PS --> PA
+    DB --> VI
+    User --> VI
+    DB --> PA
     PA --> AI
     AI --> FO
     FO --> User
@@ -78,24 +92,26 @@ This diagram illustrates the high-level components of the entire system, from da
 This diagram details the currently implemented parts of the ETL (Extract, Transform, Load) pipeline, showing the scripts and their interactions.
 
 ```mermaid
-%%{init: {'theme':'neutral'}}
-%% This diagram details the current implementation of the ETL process.
-%% It highlights the specific scripts and files involved in data collection, cleaning, and loading into the database.
-
+graph TD
     subgraph Implemented Modules
         A[User/Agent] --> B(src/data_collection/download_inventory.py)
         B --> C{Raw Excel Files<br>src/data_collection/downloads/}
         C --> D(src/data_processing/clean_data.py)
         D -- Cleans & Transforms --> E(PostgreSQL Database)
         E -- Credentials via --> F[.env file]
-        F -- Verified by --> G(src/data_processing/verify_db_setup.py)
+        E -- Queries --> J(src/visualization/dashboard.py)
+        J -- Displays Interactive --> K[Dashboard<br>(Interactive Filters)]
     end
 
     subgraph Key Interactions
         B -- Downloads --> C
         D -- Loads Data --> E
         E -- Reads Config --> F
-        G -- Tests Connection --> E
+        F -- Provides Config --> J
+    end
+
+    subgraph Database Setup
+        L[src/db_setup/create_db_table.py] --> E
     end
 ```
 
@@ -104,19 +120,15 @@ This diagram details the currently implemented parts of the ETL (Extract, Transf
 This diagram outlines the planned future modules and their sequence in the project roadmap.
 
 ```mermaid
-%%{init: {'theme':'neutral'}}
-%% This diagram outlines the planned future modules and their sequence in the project roadmap.
-
+graph TD
     subgraph Future Development Steps
-        DB[(PostgreSQL Database)] --> PS[Step 4: Top Property Selection]
-        PS --> PA[Step 5: PDF Analysis]
+        DB[(PostgreSQL Database)] --> PA[Step 5: PDF Analysis]
         PA --> AI[Step 6: AI Image Analysis (Optional)]
         AI --> FO[Step 7: Final Output Generation]
         FO --> User[User/Agent]
     end
 
     subgraph Details
-        PS -- Criteria --> Config[Configuration Files]
         PA -- Extracts Data --> PDF[Property Brochures (PDF)]
         AI -- Analyzes --> Images[Property Images]
         FO -- Generates --> Reports[Reports/CSV/Dashboards]
@@ -156,6 +168,8 @@ For data processing and storage, the project connects to a PostgreSQL database. 
 *   `REI_DB_PASSWORD`: Password for the database user.
 *   `REI_DB_HOST`: Host where your PostgreSQL database is running (e.g., `127.0.0.1` for local).
 *   `REI_DB_PORT`: Port number for the database connection (e.g., `5432`).
+*   `MIN_PRICE`: Default minimum price for the dashboard's price filter (e.g., `1500000`).
+*   `MAX_PRICE`: Default maximum price for the dashboard's price filter (e.g., `3500000`).
 
 To set up the database table, run the script located at `src/db_setup/create_db_table.py`.
 

@@ -15,22 +15,22 @@ Las siguientes funciones y módulos ya cuentan con pruebas unitarias implementad
 *   **`src/data_processing/data_cleaner.py`**
     *   `clean_and_transform_data`: Probar la limpieza y transformación de datos desde un archivo Excel, incluyendo el renombrado de columnas, conversión de tipos y manejo de valores nulos.
 
-## 📝 Pruebas Pendientes
-
-Las siguientes funciones y módulos requieren la implementación de pruebas unitarias para asegurar su correcto funcionamiento y robustez:
-
 *   **`src/data_access/property_repository.py`**
     *   `PropertyRepository.load_properties`: Probar la carga y actualización de propiedades en la base de datos, incluyendo manejo de duplicados y tipos de datos.
     *   `PropertyRepository.get_properties_from_db`: Probar la recuperación de propiedades con diferentes combinaciones de filtros.
 
 *   **`src/data_processing/excel_converter.py`**
-    *   `convert_xls_to_xlsx`: Probar la conversión de archivos XLS a XLSX (requiere un entorno con MS Excel).
+    *   `convert_xls_to_xlsx`: Probar la conversión de archivos XLS a XLSX (simulando el entorno con MS Excel).
+
+*   **`src/db_setup/create_db_table.py`**
+    *   `create_properties_table`: Probar la creación de la tabla `properties` en la base de datos, incluyendo el manejo de errores y la verificación de la conexión.
+
+## 📝 Pruebas Pendientes
+
+Las siguientes funciones y módulos requieren la implementación de pruebas unitarias para asegurar su correcto funcionamiento y robustez:
 
 *   **`src/data_collection/download_inventory.py`**
     *   Funciones de descarga y automatización web: Probar el proceso de login y descarga de archivos (estas pruebas pueden ser más complejas debido a la interacción con la UI).
-
-*   **`src/db_setup/create_db_table.py`**
-    *   Funciones de creación de tabla: Probar la creación de la tabla `properties` en la base de datos.
 
 ## 🚀 Cómo Ejecutar las Pruebas
 

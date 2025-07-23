@@ -3,6 +3,7 @@ import getpass
 import logging
 import os
 from datetime import datetime
+from src.utils.constants import DB_COLUMNS # Import DB_COLUMNS
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -25,6 +26,46 @@ console_handler = logging.StreamHandler()
 console_formatter = logging.Formatter('%(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 logger.addHandler(console_handler)
+
+# --- SQL para crear la tabla properties ---
+create_table_sql = """
+CREATE TABLE IF NOT EXISTS properties (
+    id VARCHAR(255) PRIMARY KEY,
+    fecha_alta DATE,
+    status VARCHAR(50),
+    tipo_operacion VARCHAR(50),
+    tipo_contrato VARCHAR(50),
+    en_internet BOOLEAN,
+    clave VARCHAR(255),
+    clave_oficina VARCHAR(255),
+    subtipo_propiedad VARCHAR(255),
+    calle VARCHAR(255),
+    numero VARCHAR(50),
+    colonia VARCHAR(255),
+    municipio VARCHAR(255),
+    latitud DECIMAL(10, 8),
+    longitud DECIMAL(11, 8),
+    codigo_postal VARCHAR(10),
+    precio DECIMAL(18, 2),
+    comision DECIMAL(5, 2),
+    comision_compartir_externas DECIMAL(5, 2),
+    m2_construccion DECIMAL(10, 2),
+    m2_terreno DECIMAL(10, 2),
+    recamaras INTEGER,
+    banios DECIMAL(4, 2),
+    medios_banios DECIMAL(4, 2),
+    cocina BOOLEAN,
+    niveles_construidos INTEGER,
+    edad INTEGER,
+    estacionamientos INTEGER,
+    descripcion TEXT,
+    nombre_agente VARCHAR(255),
+    apellido_paterno_agente VARCHAR(255),
+    apellido_materno_agente VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+"""
 
 def create_properties_table():
     db_name = os.environ.get('REI_DB_NAME', 'real_estate_db')

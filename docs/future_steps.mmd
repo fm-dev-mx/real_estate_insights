@@ -1,15 +1,21 @@
 graph TD
-    subgraph Future Development Steps
-        DB[(PostgreSQL Database)] --> PS[Step 4: Top Property Selection]
-        PS --> PA[Step 5: PDF Analysis]
-        PA --> AI[Step 6: AI Image Analysis (Optional)]
-        AI --> FO[Step 7: Final Output Generation]
-        FO --> User[User/Agent]
+    subgraph Current Foundation
+        A[(PostgreSQL Database)]
+        B[Modular Codebase]
+    end
+
+    subgraph Next Development Steps
+        A --> C{Step 1: Unit & Integration Testing}
+        B --> C
+        C -- Ensures Reliability --> D{Step 2: Advanced Visualizations}
+        D -- e.g., Maps, Charts --> E{Step 3: PDF & Image Analysis}
+        E -- Extracts Data --> F{Step 4: Reporting Engine}
+        F -- Generates --> G[PDF/CSV Reports]
+        G --> H[User/Agent]
     end
 
     subgraph Details
-        PS -- Criteria --> Config[Configuration Files]
-        PA -- Extracts Data --> PDF[Property Brochures (PDF)]
-        AI -- Analyzes --> Images[Property Images]
-        FO -- Generates --> Reports[Reports/CSV/Dashboards]
+        C -- Validates --> Modules[data_cleaner, property_repository, etc.]
+        D -- Enhances --> Dashboard[Dashboard UI]
+        E -- Processes --> Files[Property Brochures, Images]
     end

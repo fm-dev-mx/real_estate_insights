@@ -1,33 +1,31 @@
 graph TD
-    subgraph Data Collection
-        DC[download_inventory.py]
+    subgraph User Interaction
+        User[Usuario] --> Runner(run_dashboard.py)
     end
 
-    subgraph Data Processing
-        DP[clean_data.py]
+    subgraph Application Execution
+        Runner -- Sets PYTHONPATH & Executes --> Streamlit(Streamlit Engine)
+        Streamlit -- Runs --> DashboardApp(visualization/dashboard_app.py)
     end
 
-    subgraph Data Storage
-        DB[(PostgreSQL Database)]
+    subgraph Core Modules
+        DashboardApp -- Uses --> Logic(visualization/dashboard_logic.py)
+        DashboardApp -- Uses --> UI(visualization/ui_components.py)
+        DashboardApp -- Interacts with --> Repo(data_access/property_repository.py)
+        Repo -- Manages --> DB[(PostgreSQL Database)]
     end
 
-    subgraph Visualization
-        VI[dashboard.py]
+    subgraph Data Flow
+        RawExcel[Archivos Excel Crudos] --> Cleaner(data_processing/data_cleaner.py)
+        Cleaner -- Uses --> Converter(data_processing/excel_converter.py)
+        Cleaner -- Uses --> Validator(data_processing/data_validator.py)
+        Cleaner -- Loads Data --> Repo
     end
 
-    subgraph Future Modules
-        PA[PDF Analysis]
-        AI[AI Image Analysis]
-        FO[Final Output Generation]
+    subgraph Configuration
+        EnvFile[.env] -- Provides Credentials --> Repo
+        EnvFile -- Provides Settings --> DashboardApp
     end
 
-    User --> DC
-    DC --> RawExcel[Raw Excel Files]
-    RawExcel --> DP
-    DP --> DB
-    DB --> VI
-    User --> VI
-    DB --> PA
-    PA --> AI
-    AI --> FO
-    FO --> User
+    style Runner fill:#cde4f7,stroke:#333,stroke-width:2px
+    style Streamlit fill:#ff4b4b,stroke:#333,stroke-width:2px

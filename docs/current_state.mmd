@@ -1,21 +1,23 @@
 graph TD
-    subgraph Implemented Modules
-        A[User/Agent] --> B(src/data_collection/download_inventory.py)
-        B --> C{Raw Excel Files<br>src/data_collection/downloads/}
-        C --> D(src/data_processing/clean_data.py)
-        D -- Cleans & Transforms --> E(PostgreSQL Database)
-        E -- Credentials via --> F[.env file]
-        E -- Queries --> J(src/visualization/dashboard.py)
-        J -- Displays Interactive --> K[Dashboard<br>(Interactive Filters)]
+    subgraph Execution Flow
+        A[Usuario] --> B(run_dashboard.py)
+        B -- Launches --> C(streamlit run src/visualization/dashboard_app.py)
     end
 
-    subgraph Key Interactions
-        B -- Downloads --> C
-        D -- Loads Data --> E
-        E -- Reads Config --> F
-        F -- Provides Config --> J
+    subgraph Data Initialization
+        D[Agente] --> E(src/data_collection/download_inventory.py)
+        E -- Downloads --> F{Archivos Excel Crudos}
+        F --> G(src/data_processing/data_cleaner.py)
+        G -- Cleans & Transforms --> H(data_access/property_repository.py)
+        H -- Loads Data --> I[(PostgreSQL Database)]
     end
 
-    subgraph Database Setup
-        L[src/db_setup/create_db_table.py] --> E
+    subgraph Dashboard Interaction
+        C -- Displays Interactive --> J[Dashboard UI]
+        J -- Filters Data via --> H
+        I -- Credentials via --> K[.env file]
+    end
+
+    subgraph Setup
+        L[src/db_setup/create_db_table.py] -- Creates Table --> I
     end

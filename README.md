@@ -147,6 +147,22 @@ To set up the database table, run:
 python src/db_setup/create_db_table.py
 ```
 
+## 🧪 How to Run Tests
+
+To execute all unit tests for the project, navigate to the project root directory in your terminal and run:
+
+```bash
+python -m pytest tests/
+```
+
+To run a specific test file, you can specify the path to the test file:
+
+```bash
+python -m pytest tests/test_dashboard_logic.py
+```
+
+For a detailed roadmap of existing and pending tests, refer to [docs/testing_roadmap.md](docs/testing_roadmap.md).
+
 ## ⚠️ Considerations
 - **Environment Variables:** Ensure all required variables are set in your `.env` file.
 - **WebDriver:** Keep `chromedriver.exe` updated and correctly placed.

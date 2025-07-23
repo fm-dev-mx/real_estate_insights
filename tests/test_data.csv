@@ -1,0 +1,6 @@
+fechaAlta,tipoOperacion,tipoDeContrato,enInternet,claveOficina,subtipoPropiedad,codigoPostal,comisionACompartirInmobiliariasExternas,m2C,m2T,mediosBanios,nivelesConstruidos,apellidoP,apellidoM,nombre,id,precio,comision,recamaras,banios,edad,estacionamientos,descripcion,latitud,longitud
+2024-01-01,Venta,Exclusiva,Si,OF1,Casa,12345,1.5,100.5,200.5,1,2,Perez,Gomez,Juan,1,1000000,3.0,3,2.5,10,1,Casa con jardin,19.0, -99.0
+2024-02-01,Renta,Abierta,No,OF2,Departamento,67890,2.0,50.0,70.0,0,1,Lopez,Ruiz,Maria,2,500000,2.0,2,1.0,5,0,Departamento centrico,20.0, -100.0
+2024-03-01,Venta,Exclusiva,Si,OF3,Terreno,11223,0.0,0.0,300.0,0,0,Garcia,Diaz,Pedro,3,2000000,4.0,0,0.0,0,0,Terreno amplio,21.0, -101.0
+2024-04-01,Venta,Exclusiva,Si,OF4,Casa,44556,1.0,120.0,250.0,0,2,Fernandez,Sanchez,Ana,4,1500000,3.5,4,3.0,15,2,Casa familiar,22.0, -102.0
+2024-05-01,Renta,Abierta,No,OF5,Oficina,77889,1.0,80.0,80.0,0,1,Martinez,Torres,Luis,5,800000,2.5,0,1.0,8,1,Oficina moderna,23.0, -103.0

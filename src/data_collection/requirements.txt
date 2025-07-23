@@ -2,3 +2,4 @@ selenium
 python-dotenv
 streamlit
 psycopg2-binary
+pytest

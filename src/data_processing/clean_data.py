@@ -19,26 +19,16 @@ Uso:
 import io
 import pandas as pd
 import os
-import win32com.client as win32
-import pythoncom
 import logging
 from datetime import datetime
-import psycopg2
-from psycopg2 import extras
+
 from dotenv import load_dotenv
+from ..utils.constants import DB_COLUMNS
+from .excel_converter import convert_xls_to_xlsx
+from ..data_access.database_connection import get_db_connection
+from ..data_access.property_repository import PropertyRepository
 
 load_dotenv() # Cargar variables de entorno desde .env
-
-# --- CONSTANTS ---
-DB_COLUMNS = [
-    'id', 'fecha_alta', 'status', 'tipo_operacion', 'tipo_contrato', 'en_internet',
-    'clave', 'clave_oficina', 'subtipo_propiedad', 'calle', 'numero',
-    'colonia', 'municipio', 'latitud', 'longitud', 'codigo_postal',
-    'precio', 'comision', 'comision_compartir_externas', 'm2_construccion',
-    'm2_terreno', 'recamaras', 'banios', 'medios_banios', 'cocina',
-    'niveles_construidos', 'edad', 'estacionamientos', 'descripcion',
-    'nombre_agente', 'apellido_paterno_agente', 'apellido_materno_agente'
-]
 
 # --- DB CONFIGURATION (from environment variables) ---
 DB_NAME = os.environ.get('REI_DB_NAME', 'real_estate_db')
@@ -72,200 +62,11 @@ logger.addHandler(console_handler)
 
 
 
-def convert_xls_to_xlsx(xls_path, xlsx_path):
-    """
-    Convierte un archivo .xls a .xlsx usando pywin32 y Microsoft Excel.
-    Requiere que Microsoft Excel esté instalado en el sistema.
-    """
-    excel = None
-    workbook = None
-    com_initialized = False
-    try:
-        logger.info(f"[CONVERSION] Iniciando conversión de {xls_path} a {xlsx_path}")
-        pythoncom.CoInitialize() # Inicializa COM para este hilo
-        com_initialized = True
-        logger.info("[CONVERSION] COM inicializado.")
 
-        excel = win32.Dispatch("Excel.Application")
-        excel.Visible = False  # No mostrar Excel
-        excel.DisplayAlerts = False # Suprimir alertas de Excel
-        logger.info("[CONVERSION] Instancia de Excel creada.")
 
-        logger.info("[CONVERSION] Abriendo workbook: {xls_path}")
-        workbook = excel.Workbooks.Open(xls_path)
-        logger.info("[CONVERSION] Workbook abierto. Guardando como XLSX...")
-        workbook.SaveAs(xlsx_path, FileFormat=51)  # FileFormat=51 para .xlsx
-        logger.info(f"[CONVERSION] Workbook guardado como {xlsx_path}.")
-        return True
-    except Exception as e:
-        logger.error(f"[CONVERSION] Error al convertir el archivo XLS a XLSX: {e}")
-        return False
-    finally:
-        if workbook:
-            try:
-                workbook.Close(SaveChanges=False) # Cerrar sin guardar cambios adicionales
-                logger.info("[CONVERSION] Workbook cerrado.")
-            except Exception as e: # Capturar cualquier error al cerrar
-                logger.error(f"[CONVERSION] Error al cerrar el workbook: {e}")
-        if excel:
-            try:
-                excel.Quit()
-                logger.info("[CONVERSION] Excel.Application cerrado.")
-            except Exception as e: # Capturar cualquier error al salir de Excel
-                logger.error(f"[CONVERSION] Error al salir de Excel.Application: {e}")
-        if com_initialized:
-            pythoncom.CoUninitialize() # Desinicializa COM
-            logger.info("[CONVERSION] COM desinicializado.")
 
-def clean_and_transform_data(file_path):
-    """
-    Lee un archivo Excel, limpia y transforma los datos según el esquema definido.
-    """
-    logger.info(f"[CLEANING] Iniciando limpieza y transformación de datos para: {file_path}")
-    if not os.path.exists(file_path):
-        logger.error(f"[CLEANING] Error: El archivo {file_path} no existe.")
-        return None
 
-    try:
-        df = pd.read_excel(file_path)
-        logger.info(f"[CLEANING] Datos cargados exitosamente desde: {file_path}")
 
-        # 1. Renombrar columnas a snake_case y acortar nombres largos
-        df.rename(columns={
-            'fechaAlta': 'fecha_alta',
-            'tipoOperacion': 'tipo_operacion',
-            'tipoDeContrato': 'tipo_contrato',
-            'enInternet': 'en_internet',
-            'claveOficina': 'clave_oficina',
-            'subtipoPropiedad': 'subtipo_propiedad',
-            'codigoPostal': 'codigo_postal',
-            'comisionACompartirInmobiliariasExternas': 'comision_compartir_externas',
-            'm2C': 'm2_construccion',
-            'm2T': 'm2_terreno',
-            'mediosBanios': 'medios_banios',
-            'nivelesConstruidos': 'niveles_construidos',
-            'apellidoP': 'apellido_paterno_agente',
-            'apellidoM': 'apellido_materno_agente',
-            'nombre': 'nombre_agente' # Renombrar para consistencia con apellidos
-        }, inplace=True)
-        logger.info("[CLEANING] Columnas renombradas.")
-
-        # 2. Manejar fechaAlta: convertir a datetime
-        df['fecha_alta'] = pd.to_datetime(df['fecha_alta'])
-        logger.info("[CLEANING] Columna 'fecha_alta' convertida a datetime.")
-
-        # 3. Manejar en_internet y cocina: convertir a booleano, imputando NaN a False
-        df['en_internet'] = df['en_internet'].fillna(0).astype(bool)
-        df['cocina'] = df['cocina'].apply(lambda x: True if pd.notna(x) and str(x).lower() == 'si' else False) # Asumiendo 'si' indica True
-        logger.info("[CLEANING] Columnas 'en_internet' y 'cocina' convertidas a booleano.")
-
-        # 4. Manejar codigo_postal y numero: convertir a string
-        df['codigo_postal'] = df['codigo_postal'].astype(str)
-        df['numero'] = df['numero'].astype(str) # Mantener como string para flexibilidad
-        logger.info("[CLEANING] Columnas 'codigo_postal' y 'numero' convertidas a string.")
-
-        # 5. Manejar otras columnas numéricas: asegurar tipo correcto, mantener nulos
-        # Las columnas que eran float64 y ahora son INTEGER en el esquema, se convertirán a Int64 (con mayúscula) para permitir nulos.
-        # Pandas 1.0+ soporta Integer arrays con NaN usando Int64.
-        for col in ['recamaras', 'niveles_construidos', 'edad', 'estacionamientos']:
-            if col in df.columns:
-                df[col] = df[col].astype('Int64') # Permite nulos
-        
-        # Para baños, que es DECIMAL(4,2), se mantiene como float y se manejará la precisión al insertar en DB
-        for col in ['precio', 'comision', 'comision_compartir_externas', 'm2_construccion', 'm2_terreno', 'latitud', 'longitud', 'banios', 'medios_banios']:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce') # Convertir a numérico, nulos si hay error
-
-        logger.info("[CLEANING] Columnas numéricas procesadas.")
-
-        # 6. Eliminar columnas excluidas
-        columns_to_drop = ['numeroLlaves', 'cuotaMantenimiento', 'institucionHipotecaria']
-        df.drop(columns=[col for col in columns_to_drop if col in df.columns], inplace=True)
-        logger.info("[CLEANING] Columnas excluidas eliminadas.")
-
-        # Asegurar que todas las columnas del esquema final estén presentes y en el orden correcto (opcional, pero buena práctica)
-        # y que los nombres finales coincidan exactamente con el esquema de la DB.
-        df = df[[col for col in DB_COLUMNS if col in df.columns]]
-        logger.info("[CLEANING] DataFrame finalizado con columnas seleccionadas y reordenadas.")
-
-        logger.info("[CLEANING] Limpieza y transformación de datos completada.")
-        return df
-    except Exception as e:
-        logger.error(f"[CLEANING] Error durante la limpieza y transformación de datos: {e}")
-        return None
-
-def load_data_to_postgresql(df, db_name, db_user, db_host, db_port, db_password):
-    """
-    Carga un DataFrame de pandas a la tabla 'properties' en PostgreSQL.
-    Utiliza INSERT ... ON CONFLICT (id) DO UPDATE para manejar duplicados.
-    """
-    logger.info("[LOAD] Iniciando carga de datos a PostgreSQL.")
-    conn = None
-    try:
-        conn = psycopg2.connect(
-            dbname=db_name,
-            user=db_user,
-            password=db_password,
-            host=db_host,
-            port=db_port
-        )
-        cur = conn.cursor()
-        logger.info("[LOAD] Conexión a la base de datos PostgreSQL exitosa.")
-
-        # Asegurarse de que los nombres de las columnas del DataFrame coincidan con los de la DB
-        # y estén en el orden correcto para la inserción.
-        # Las columnas created_at y updated_at se manejan automáticamente por la DB.
-        columns = DB_COLUMNS
-
-        # Convertir DataFrame a lista de tuplas, manejando los tipos de datos para PostgreSQL
-        # Convertir Int64 (pandas nullable integer) a int o None para psycopg2
-        # Convertir bool a True/False
-        data_to_insert = []
-        for index, row in df[columns].iterrows():
-            # Manejar Int64 (pandas nullable integer) a int o None
-            processed_row = []
-            for col_name in columns:
-                value = row[col_name]
-                if pd.isna(value):
-                    processed_row.append(None)
-                elif isinstance(value, pd.Int64Dtype.type):
-                    processed_row.append(int(value))
-                elif isinstance(value, bool):
-                    processed_row.append(bool(value))
-                else:
-                    processed_row.append(value)
-            data_to_insert.append(tuple(processed_row))
-
-        # Construir la sentencia SQL de inserción/actualización
-        # Usamos ON CONFLICT (id) DO UPDATE para actualizar registros existentes
-        # y SET para especificar qué columnas actualizar.
-        # Excluimos 'id', 'fecha_alta', 'created_at' de la actualización si ya existen.
-        update_columns = [col for col in columns if col not in ['id', 'fecha_alta']]
-        update_set_clause = ', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])
-        update_set_clause += ", updated_at = CURRENT_TIMESTAMP"
-
-        insert_sql = f'''
-        INSERT INTO properties ({', '.join(columns)})
-        VALUES %s
-        ON CONFLICT (id) DO UPDATE SET
-            {update_set_clause}
-        '''
-
-        logger.info(f"[LOAD] Insertando/actualizando {len(data_to_insert)} registros en la tabla 'properties'.")
-        extras.execute_values(cur, insert_sql, data_to_insert, page_size=1000)
-        conn.commit()
-        logger.info(f"[LOAD] Carga de datos a PostgreSQL completada exitosamente. {len(data_to_insert)} registros procesados.")
-
-    except psycopg2.Error as e:
-        logger.error(f"[LOAD] Error al cargar datos a PostgreSQL: {e}")
-        if conn:
-            conn.rollback()
-    except Exception as e:
-        logger.error(f"[LOAD] Un error inesperado ocurrió durante la carga de datos: {e}")
-    finally:
-        if conn:
-            conn.close()
-            logger.info("[LOAD] Conexión a la base de datos cerrada.")
 
 def find_target_excel_file(directory):
     """
@@ -312,9 +113,7 @@ def main():
             logger.error("Error: La variable de entorno REI_DB_PASSWORD no está configurada.")
             raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")
         
-        conn_check = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-        )
+        conn_check = get_db_connection(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
         logger.info("[MAIN] Verificación de conexión a la base de datos exitosa.")
         conn_check.close()
     except (psycopg2.Error, ValueError) as e:
@@ -337,7 +136,8 @@ def main():
             logger.info(cleaned_df.isnull().sum().to_string())
 
             # --- Cargar datos a PostgreSQL ---
-            load_data_to_postgresql(cleaned_df, DB_NAME, DB_USER, DB_HOST, DB_PORT, DB_PASSWORD)
+            property_repo = PropertyRepository(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+            property_repo.load_properties(cleaned_df, DB_COLUMNS)
 
         else:
             logger.error("[MAIN] No se pudo obtener un DataFrame limpio.")

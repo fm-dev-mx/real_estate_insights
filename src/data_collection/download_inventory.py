@@ -25,7 +25,7 @@ LOG_DIR = os.path.join(BASE_DIR, 'logs')
 DEFAULT_WAIT_TIME = 30 # Seconds
 
 # --- LOGGING CONFIGURATION ---
-os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True) # Keep this for logging setup
 LOG_FILE_PATH = os.path.join(LOG_DIR, f"script_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
 
 logging.basicConfig(
@@ -66,11 +66,7 @@ def setup_webdriver(download_dir):
     options.add_experimental_option("prefs", prefs)
     return webdriver.Chrome(options=options)
 
-def main():
-    # Create directories if they don't exist
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    os.makedirs(SCREENSHOT_DIR, exist_ok=True)
-
+def download_inventory_process():
     # Credentials will be read from environment variables for security
     USERNAME = os.environ.get('C21_USERNAME')
     PASSWORD = os.environ.get('C21_PSW')
@@ -81,7 +77,11 @@ def main():
     if not USERNAME or not PASSWORD:
         logger.error("X Error: C21_USERNAME and C21_PSW environment variables are not configured.")
         logger.error("Please configure them before running the script.")
-        exit(1)
+        return False # Return False on error
+
+    # Create directories if they don't exist - MOVED HERE
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
     driver = None # Initialize driver to None to ensure it closes in case of error
 
@@ -137,7 +137,7 @@ def main():
             logger.error(f"Saving page content after login attempt to '{html_filename}'...")
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(driver.page_source)
-            exit(1)
+            return False # Return False on error
 
         # After waiting, explicitly verify the URL to confirm final status
         if driver.current_url.startswith(PROPERTIES_PAGE_URL) or driver.current_url == 'https://plus.21onlinemx.com/':
@@ -149,7 +149,7 @@ def main():
             logger.error(f"Saving unexpected page content to '{html_filename}'...")
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(driver.page_source)
-            exit(1)
+            return False # Return False on error
 
         logger.info("2. Navigating to properties page...")
         save_screenshot_with_timestamp(driver, "3_before_properties_navigation")
@@ -196,26 +196,30 @@ def main():
         if os.path.exists(DOWNLOAD_FILE_PATH):
             file_size_kb = round(os.path.getsize(DOWNLOAD_FILE_PATH) / 1024, 1)
             logger.info(f"✅ Inventory downloaded successfully: {DOWNLOAD_FILE_PATH} ({file_size_kb} KB)")
+            return True # Return True on success
         else:
             logger.error("X 'inventory.xls' was not generated.")
             logger.error("Verify Selenium download configuration and if the button truly initiates a direct download.")
             logger.error("You can also check the browser console in non-headless mode for download errors.")
-            exit(1)
+            return False # Return False on error
 
     except TimeoutException as e:
         logger.error(f"X Timeout Error: {e}")
         logger.error("An element was not found or a page did not load in time.")
-        exit(1)
+        return False # Return False on error
     except WebDriverException as e:
         logger.error(f"X WebDriver Error: {e}")
         logger.error("Ensure the browser driver (ChromeDriver/GeckoDriver) is installed and in your PATH.")
-        exit(1)
+        return False # Return False on error
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
-        exit(1)
+        return False # Return False on error
     finally:
         if driver:
             driver.quit()
+
+def main():
+    download_inventory_process()
 
 if __name__ == "__main__":
     main()

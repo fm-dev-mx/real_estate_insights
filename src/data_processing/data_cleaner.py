@@ -18,6 +18,27 @@ def clean_and_transform_data(file_path):
         df = pd.read_excel(file_path)
         logger.info(f"[CLEANING] Datos cargados exitosamente desde: {file_path}")
 
+        # --- DEBUGGING BAÑOS - RAW DATA FROM EXCEL (before rename) ---
+        logger.info("[CLEANING] Debugging banos/medios_banos RAW from Excel (before rename):")
+        # Check for common variations of 'banios' column name
+        for col_name_raw in ['banios', 'Banios']:
+            if col_name_raw in df.columns:
+                logger.info(f"'{col_name_raw}' RAW Dtype: {df[col_name_raw].dtype}")
+                logger.info(f"'{col_name_raw}' RAW head:\n{df[col_name_raw].head().to_string()}")
+                logger.info(f"'{col_name_raw}' RAW null count: {df[col_name_raw].isnull().sum()}")
+            else:
+                logger.info(f"'{col_name_raw}' column does NOT exist RAW from Excel.")
+
+        # Check for common variations of 'mediosBanios' column name
+        for col_name_raw in ['medios_banios', 'mediosBanios']:
+            if col_name_raw in df.columns:
+                logger.info(f"'{col_name_raw}' RAW Dtype: {df[col_name_raw].dtype}")
+                logger.info(f"'{col_name_raw}' RAW head:\n{df[col_name_raw].head().to_string()}")
+                logger.info(f"'{col_name_raw}' RAW null count: {df[col_name_raw].isnull().sum()}")
+            else:
+                logger.info(f"'{col_name_raw}' column does NOT exist RAW from Excel.")
+        logger.info("--------------------------------------------------")
+
         # 1. Renombrar columnas a snake_case y acortar nombres largos
         df.rename(columns={
             'fechaAlta': 'fecha_alta',
@@ -34,7 +55,8 @@ def clean_and_transform_data(file_path):
             'nivelesConstruidos': 'niveles_construidos',
             'apellidoP': 'apellido_paterno_agente',
             'apellidoM': 'apellido_materno_agente',
-            'nombre': 'nombre_agente' # Renombrar para consistencia con apellidos
+            'nombre': 'nombre_agente',
+            'banios': 'banios' # Asegurar que 'banios' se renombra a sí mismo si ya está en minúsculas
         }, inplace=True)
         logger.info("[CLEANING] Columnas renombradas.")
 
@@ -59,12 +81,41 @@ def clean_and_transform_data(file_path):
             if col in df.columns:
                 df[col] = df[col].astype('Int64') # Permite nulos
         
-        # Para baños, que es DECIMAL(4,2), se mantiene como float y se manejará la precisión al insertar en DB
-        for col in ['precio', 'comision', 'comision_compartir_externas', 'm2_construccion', 'm2_terreno', 'latitud', 'longitud', 'banios', 'medios_banios']:
+        # Para precio, comision, m2_construccion, m2_terreno, latitud, longitud
+        for col in ['precio', 'comision', 'comision_compartir_externas', 'm2_construccion', 'm2_terreno', 'latitud', 'longitud']:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce') # Convertir a numérico, nulos si hay error
 
+        # --- Manejo específico para banios y medios_banios: convertir a numérico y rellenar NaN con 0 ---
+        for col in ['banios', 'medios_banios']:
+            if col in df.columns:
+                # Convertir a string primero para manejar valores no numéricos como texto o espacios
+                # Luego limpiar espacios, comas, etc., convertir a numérico, forzando errores a NaN, y finalmente rellenar NaN con 0.0
+                df[col] = pd.to_numeric(
+                    df[col].astype(str).str.strip().str.replace(',', ''), 
+                    errors='coerce'
+                ).fillna(0.0)
+            else:
+                df[col] = 0.0 # Asegurar que la columna exista y sea 0.0 si no estaba presente
+
         logger.info("[CLEANING] Columnas numéricas procesadas.")
+
+        # --- DEBUGGING BAÑOS EN DATA_CLEANER (after fillna) ---
+        logger.info("[CLEANING] Debugging banos/medios_banos after numeric conversion and fillna(0):")
+        if 'banios' in df.columns:
+            logger.info(f"'banios' Dtype: {df['banios'].dtype}")
+            logger.info(f"'banios' head:\n{df['banios'].head().to_string()}")
+            logger.info(f"'banios' null count: {df['banios'].isnull().sum()}")
+        else:
+            logger.info("'banios' column does NOT exist in DataFrame after rename.")
+
+        if 'medios_banios' in df.columns:
+            logger.info(f"'medios_banios' Dtype: {df['medios_banios'].dtype}")
+            logger.info(f"'medios_banios' head:\n{df['medios_banios'].head().to_string()}")
+            logger.info(f"'medios_banios' null count: {df['medios_banios'].isnull().sum()}")
+        else:
+            logger.info("'medios_banios' column does NOT exist in DataFrame after rename.")
+        logger.info("--------------------------------------------------")
 
         # 6. Eliminar columnas excluidas
         columns_to_drop = ['numeroLlaves', 'cuotaMantenimiento', 'institucionHipotecaria']

@@ -28,6 +28,7 @@ commit_message.txt
 src/data_collection/downloads/
 src/data_collection/screenshots/
 src/data_collection/logs/
+data/pdfs/
 
 # WebDriver
 src/data_collection/chromedriver.exe

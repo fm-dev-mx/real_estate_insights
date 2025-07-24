@@ -140,6 +140,24 @@ class PropertyRepository:
                 params['min_commission'] = float(min_commission)
 
             df = pd.read_sql(query, conn, params=params)
+            
+            # --- DEBUGGING BAÑOS EN PROPERTY_REPOSITORY ---
+            logger.info("[DB_RETRIEVE] Debugging banos/medios_banos after DB retrieval:")
+            if 'banios' in df.columns:
+                logger.info(f"'banios' column exists. Dtype: {df['banios'].dtype}")
+                logger.info(f"'banios' head:\n{df['banios'].head().to_string()}")
+                logger.info(f"'banios' null count: {df['banios'].isnull().sum()}")
+            else:
+                logger.info("'banios' column does NOT exist in retrieved DataFrame.")
+
+            if 'medios_banios' in df.columns:
+                logger.info(f"'medios_banios' column exists. Dtype: {df['medios_banios'].dtype}")
+                logger.info(f"'medios_banios' head:\n{df['medios_banios'].head().to_string()}")
+                logger.info(f"'medios_banios' null count: {df['medios_banios'].isnull().sum()}")
+            else:
+                logger.info("'medios_banios' column does NOT exist in retrieved DataFrame.")
+            logger.info("--------------------------------------------------")
+
             return df
 
         except psycopg2.Error as e:

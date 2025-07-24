@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import subprocess
+
 from utils.constants import (
     STATUS_EN_PROMOCION, STATUS_CON_INTENCION, STATUS_VENDIDAS,
     CONTRACT_TYPE_EXCLUSIVA, CONTRACT_TYPE_OPCION
@@ -9,6 +11,7 @@ from utils.constants import (
 from data_access.property_repository import PropertyRepository
 from visualization.dashboard_logic import apply_dashboard_transformations
 from data_processing.data_validator import get_incomplete_properties
+from data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR
 
 load_dotenv() # Cargar variables de entorno desde .env
 
@@ -127,10 +130,49 @@ if not properties_df.empty:
     properties_df = apply_dashboard_transformations(properties_df)
 
     st.write(f"Total de propiedades encontradas: {len(properties_df)}")
-    st.dataframe(properties_df, column_config={
-        "precio": st.column_config.NumberColumn("Precio", format="$,.0f"),
-        "comision": st.column_config.NumberColumn("Comisión", format="%.2f%%") # Assuming commission is a percentage
-    })
+
+    # Custom display for properties with PDF download/view buttons
+    cols = st.columns([0.5, 1, 1, 1, 1, 1, 1, 1]) # Adjust column widths as needed
+    headers = ["ID", "Precio", "M2 Const.", "M2 Terr.", "Recámaras", "Baños", "Días en Mercado", "PDF"]
+    for col, header in zip(cols, headers):
+        col.write(f"**{header}**")
+
+    for index, row in properties_df.iterrows():
+        cols = st.columns([0.5, 1, 1, 1, 1, 1, 1, 1])
+        property_id = row['id']
+        pdf_local_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
+
+        cols[0].write(property_id)
+        cols[1].write(f"${row['precio']:,}")
+        cols[2].write(f"{row['m2_construccion']:.0f}")
+        cols[3].write(f"{row['m2_terreno']:.0f}")
+        cols[4].write(f"{row['recamaras']:.0f}")
+        
+        # Manejar la visualización de banos_totales para mostrar N/A si es NaN
+        banos_display = f"{row['banos_totales']:.1f}" if pd.notna(row['banos_totales']) else "N/A"
+        cols[5].write(banos_display)
+
+        cols[6].write(f"{row['dias_en_mercado']:.0f}")
+
+        if os.path.exists(pdf_local_path):
+            button_label = "Ver PDF"
+            button_key = f"view_pdf_{property_id}"
+            if cols[7].button(button_label, key=button_key):
+                try:
+                    subprocess.Popen([pdf_local_path], shell=True)
+                    st.success(f"Abriendo PDF de {property_id}...")
+                except Exception as e:
+                    st.error(f"Error al abrir PDF de {property_id}: {e}")
+        else:
+            button_label = "Descargar PDF"
+            button_key = f"download_pdf_{property_id}"
+            if cols[7].button(button_label, key=button_key):
+                with st.spinner(f"Descargando PDF de {property_id}..."):
+                    downloaded_path = download_property_pdf(property_id)
+                    if downloaded_path:
+                        st.success(f"PDF de {property_id} descargado en {downloaded_path}")
+                    else:
+                        st.error(f"Fallo al descargar PDF de {property_id}.")
 
     # Tabla adicional para propiedades con campos faltantes
     st.subheader('Propiedades con Campos Faltantes')

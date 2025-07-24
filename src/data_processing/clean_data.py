@@ -1,21 +1,3 @@
-
-
-"""Este script ETL (Extract, Transform, Load) se encarga de procesar archivos de inventario de bienes raíces,
-limpiar y transformar los datos, y cargarlos en una base de datos PostgreSQL.
-
-Funcionalidades principales:
-- Búsqueda y conversión automática de archivos .xls a .xlsx.
-- Conexión segura a la base de datos usando variables de entorno (`.env`).
-- Limpieza y normalización de datos (renombrado de columnas, conversión de tipos, etc.).
-- Carga de datos en la base de datos con manejo de conflictos (actualización de registros existentes).
-- Registro detallado de operaciones y errores en un archivo de log.
-
-Uso:
-1.  Asegurarse de que las variables de entorno de la base de datos (REI_DB_*) estén configuradas en un archivo `.env` en la raíz del proyecto.
-2.  Colocar el archivo de inventario (.xls o .xlsx) en el directorio 'src/data_collection/downloads'.
-3.  Ejecutar el script desde el directorio 'src/data_processing': 'py clean_data.py'
-"""
-
 import io
 import pandas as pd
 import os
@@ -27,6 +9,7 @@ from ..utils.constants import DB_COLUMNS
 from .excel_converter import convert_xls_to_xlsx
 from ..data_access.database_connection import get_db_connection
 from ..data_access.property_repository import PropertyRepository
+from .data_cleaner import clean_and_transform_data # Import the function
 
 load_dotenv() # Cargar variables de entorno desde .env
 
@@ -60,14 +43,6 @@ console_formatter = logging.Formatter('%(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 logger.addHandler(console_handler)
 
-
-
-
-
-
-
-
-
 def find_target_excel_file(directory):
     """
     Busca el archivo Excel a procesar en el directorio especificado.
@@ -91,7 +66,7 @@ def find_target_excel_file(directory):
         if f.endswith('.xls'):
             xls_file_path = os.path.join(directory, f)
             xlsx_file_name = os.path.splitext(os.path.basename(xls_file_path))[0] + '.xlsx'
-            xlsx_file_path = os.path.join(directory, xlsx_file_name)
+            xlsx_file_path = os.path.join(directory, xls_file_name)
             logger.info(f"[MAIN] Encontrado archivo XLS: {xls_file_path}. Intentando convertir a {xlsx_file_path}...")
             if convert_xls_to_xlsx(xls_file_path, xlsx_file_path):
                 logger.info(f"[MAIN] Conversión exitosa. El archivo a analizar es: {xlsx_file_path}")

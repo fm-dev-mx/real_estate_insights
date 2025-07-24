@@ -38,3 +38,38 @@ def test_apply_dashboard_transformations():
     assert 'fecha_alta' not in transformed_df.columns
     assert 'cocina' not in transformed_df.columns
     assert 'latitud' not in transformed_df.columns
+
+def test_banos_totales_calculation():
+    # Arrange
+    data = {
+        'banos': [2, 1, 0, np.nan, 3],
+        'medios_banos': [1, 0, 1, 0.5, np.nan]
+    }
+    test_df = pd.DataFrame(data)
+
+    # Act
+    transformed_df = apply_dashboard_transformations(test_df.copy())
+
+    # Assert
+    # Expected banos_totales: [2 + 0.5 = 2.5, 1 + 0 = 1.0, 0 + 0.5 = 0.5, 0 + 0.25 = 0.25, 3 + 0 = 3.0]
+    pd.testing.assert_series_equal(
+        transformed_df['banos_totales'],
+        pd.Series([2.5, 1.0, 0.5, 0.25, 3.0], name='banos_totales')
+    )
+
+def test_banos_totales_missing_columns():
+    # Arrange
+    data = {
+        'col_random': [1, 2, 3]
+    }
+    test_df = pd.DataFrame(data)
+
+    # Act
+    transformed_df = apply_dashboard_transformations(test_df.copy())
+
+    # Assert
+    assert 'banos_totales' in transformed_df.columns
+    pd.testing.assert_series_equal(
+        transformed_df['banos_totales'],
+        pd.Series([0.0, 0.0, 0.0], name='banos_totales')
+    )

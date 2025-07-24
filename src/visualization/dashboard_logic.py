@@ -19,20 +19,28 @@ def apply_dashboard_transformations(properties_df):
     if 'fecha_alta' in properties_df.columns:
         properties_df['fecha_alta'] = pd.to_datetime(properties_df['fecha_alta'])
         properties_df['dias_en_mercado'] = (pd.to_datetime('today') - properties_df['fecha_alta']).dt.days
+    else:
+        properties_df['dias_en_mercado'] = pd.NA # Usar pd.NA para valores faltantes
 
     # Redondear metros de construcción y terreno
     if 'm2_construccion' in properties_df.columns:
         properties_df['m2_construccion'] = properties_df['m2_construccion'].round()
+    else:
+        properties_df['m2_construccion'] = pd.NA # Usar pd.NA para valores faltantes
+
     if 'm2_terreno' in properties_df.columns:
         properties_df['m2_terreno'] = properties_df['m2_terreno'].round()
+    else:
+        properties_df['m2_terreno'] = pd.NA # Usar pd.NA para valores faltantes
 
     # Unificar baños totales (sumando medios baños)
-    if 'banos' in properties_df.columns and 'medios_banos' in properties_df.columns:
-        properties_df['banos_totales'] = properties_df['banos'] + (properties_df['medios_banos'] * 0.5)
-    elif 'banos' in properties_df.columns:
-        properties_df['banos_totales'] = properties_df['banos']
-    elif 'medios_banos' in properties_df.columns:
-        properties_df['banos_totales'] = properties_df['medios_banos'] * 0.5
+    # Convertir a float para asegurar compatibilidad con NaN y luego a pd.NA para enteros nulos
+    banos_series = properties_df['banos'].astype(float) if 'banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
+    medios_banos_series = properties_df['medios_banos'].astype(float) if 'medios_banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
+
+    properties_df['banos_totales'] = banos_series.fillna(0) + (medios_banos_series.fillna(0) * 0.5)
+    # Convertir a Int64 si no hay decimales y no es NaN, o dejar como float si hay decimales o NaN
+    properties_df['banos_totales'] = properties_df['banos_totales'].apply(lambda x: int(x) if pd.notna(x) and x == int(x) else x)
 
     # Eliminar columnas de fechas y cocina
     columns_to_drop = [

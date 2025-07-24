@@ -12,6 +12,7 @@ graph TD
         DashboardApp -- Uses --> Logic(visualization/dashboard_logic.py)
         DashboardApp -- Uses --> UI(visualization/ui_components.py)
         DashboardApp -- Interacts with --> Repo(data_access/property_repository.py)
+        DashboardApp -- Triggers --> PdfDownloader(data_collection/download_pdf.py)
         Repo -- Manages --> DB[(PostgreSQL Database)]
     end
 
@@ -20,6 +21,10 @@ graph TD
         Cleaner -- Uses --> Converter(data_processing/excel_converter.py)
         Cleaner -- Uses --> Validator(data_processing/data_validator.py)
         Cleaner -- Loads Data --> Repo
+    end
+    
+    subgraph Data Collection
+         PdfDownloader -- Downloads PDF to --> LocalStorage[data/pdfs]
     end
 
     subgraph Configuration

@@ -2,11 +2,11 @@
 
 ## 1. Hoja de Ruta (Roadmap)
 
-1.  **Gestión de PDFs (Descarga y Visualización):** Implementar la descarga de PDFs por propiedad y la interfaz de usuario para verlos localmente. Esto es fundamental para las siguientes etapas.
+1.  **Gestión de PDFs (Descarga y Visualización):** Implementar la descarga de PDFs por propiedad y la interfaz de usuario para verlos localmente. Esto es fundamental para las siguientes etapas. **(IMPLEMENTADO)**
 2.  **Extracción y Comparación de Datos de PDFs:** Desarrollar la lógica para leer los PDFs descargados, extraer campos clave y compararlos con los datos existentes en la base de datos, mostrando las diferencias.
 3.  **Análisis Visual y Calificación de Imágenes:** Integrar la extracción de imágenes de los PDFs, su visualización en una galería y la implementación de un algoritmo de calificación visual.
 4.  **Control de Versiones de Registros:** Diseñar e implementar el sistema de auditoría para registrar todas las modificaciones realizadas sobre los datos de las propiedades.
-5.  **Integración y Refinamiento de UI/UX:** Unificar todas las nuevas funcionalidades en el dashboard de Streamlit, asegurando una experiencia de usuario fluida y robusta.
+5.  **Integración y Refinamiento de UI/UX:** Unificar todas las nuevas funcionalidades en el dashboard de Streamlit, asegurando una una experiencia de usuario fluida y robusta.
 
 ## 2. Gestión de PDFs (Descarga y Visualización)
 

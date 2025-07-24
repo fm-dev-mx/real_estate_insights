@@ -31,7 +31,7 @@
 
 1.  **Leer PDFs:** Al hacer clic en `[Ver PDF]`, además de abrirlo, se iniciará un proceso en segundo plano para extraer texto.
 2.  **Extracción de Campos Clave:**
-    *   **Campos Prioritarios:** `precio`, `m2_construccion`, `m2_terreno`, `recamaras`, `banios`, `edad`, `descripcion`.
+    *   **Campos Prioritarios:** `precio`, `m2_construccion`, `m2_terreno`, `recamaras`, `banos`, `edad`, `descripcion`.
     *   **Librería:** `PyMuPDF` (fitz) es excelente para extracción de texto e imágenes. Para texto no seleccionable (imágenes), se puede integrar `Tesseract` (vía `Pytesseract`).
     *   **Proceso:** Se definirá un conjunto de reglas (regex, búsqueda de palabras clave cercanas a valores numéricos) para identificar los campos prioritarios.
     *   **Validación:** Los datos extraídos se validarán contra patrones esperados (ej. números para precios, fechas para antigüedad).

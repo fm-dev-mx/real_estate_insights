@@ -13,14 +13,14 @@ from src.utils.constants import DB_COLUMNS
 def mock_db_connection():
     with patch('src.data_access.database_connection.psycopg2') as mock_psycopg2_conn_module, \
          patch('src.data_access.property_repository.psycopg2.extras') as mock_extras_module:
-        
+
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_conn.cursor.return_value = mock_cursor
         mock_conn.encoding = 'UTF8' # Añadir el atributo encoding a la conexión
         mock_cursor.connection = mock_conn # Asegurar que el cursor tenga una conexión mockeada
         mock_psycopg2_conn_module.connect.return_value = mock_conn
-        
+
         # Mockear execute_values directamente en el módulo donde se usa
         with patch('src.data_access.property_repository.extras.execute_values') as mock_execute_values:
             yield mock_conn, mock_cursor, mock_psycopg2_conn_module, mock_extras_module, mock_execute_values
@@ -57,9 +57,8 @@ def test_load_properties_insert(property_repo, mock_db_connection):
         'm2_construccion': [100.0, 150.0],
         'm2_terreno': [200.0, 250.0],
         'recamaras': [3, 2],
-        'banios': [2.0, 1.0],
-        'medios_banios': [0.5, 0.0],
-        'cocina': [True, False],
+            'banos_totales': [2.5, 1.0],
+            'cocina': [True, False],
         'niveles_construidos': [2, 1],
         'edad': [5, 10],
         'estacionamientos': [1, 0],
@@ -104,7 +103,7 @@ def test_get_properties_from_db(property_repo, mock_db_connection):
         assert 'SELECT * FROM properties WHERE 1=1 AND precio >= %(min_price)s AND status IN %(status_types)s' in args[0]
         assert kwargs['params']['min_price'] == 100000.0
         assert kwargs['params']['status_types'] == ('enPromocion',)
-        
+
         pd.testing.assert_frame_equal(result_df, expected_df)
         mock_conn.close.assert_called_once()
 
@@ -132,7 +131,7 @@ def test_get_properties_from_db_no_filters(property_repo, mock_db_connection):
 
 def test_load_properties_error_handling(property_repo, mock_db_connection):
     mock_conn, mock_cursor, mock_psycopg2_conn_module, mock_extras_module, mock_execute_values = mock_db_connection
-    
+
     # Configurar el mock de execute_values para que lance un psycopg2.Error
     mock_execute_values.side_effect = psycopg2.Error("Error de carga simulado")
 
@@ -159,9 +158,8 @@ def test_load_properties_error_handling(property_repo, mock_db_connection):
         'm2_construccion': [100.0],
         'm2_terreno': [200.0],
         'recamaras': [3],
-        'banios': [2.0],
-        'medios_banios': [0.5],
-        'cocina': [True],
+            'banos_totales': [2.5],
+            'cocina': [True],
         'niveles_construidos': [2],
         'edad': [5],
         'estacionamientos': [1],

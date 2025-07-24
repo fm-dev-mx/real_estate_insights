@@ -52,8 +52,7 @@ CREATE TABLE IF NOT EXISTS properties (
     m2_construccion DECIMAL(10, 2),
     m2_terreno DECIMAL(10, 2),
     recamaras INTEGER,
-    banios DECIMAL(4, 2),
-    medios_banios DECIMAL(4, 2),
+    banos_totales DECIMAL(4, 1),
     cocina BOOLEAN,
     niveles_construidos INTEGER,
     edad INTEGER,
@@ -94,6 +93,13 @@ def create_properties_table():
         cur.execute(create_table_sql)
         conn.commit()
         logger.info("✅ Tabla 'properties' creada o ya existente en la base de datos.")
+
+        # --- Migración: Asegurar que la columna banos_totales exista ---
+        logger.info("Verificando/Añadiendo columna 'banos_totales' para compatibilidad...")
+        cur.execute("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
+        conn.commit()
+        logger.info("✅ Columna 'banos_totales' verificada/añadida.")
+
         cur.close()
 
     except psycopg2.Error as e:

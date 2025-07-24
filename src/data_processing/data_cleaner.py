@@ -20,17 +20,11 @@ def clean_and_transform_data(file_path):
 
         # --- DEBUGGING BAÑOS - RAW DATA FROM EXCEL (before rename) ---
         logger.info("[CLEANING] Debugging banos/medios_banos RAW from Excel (before rename):")
-        # Check for common variations of 'banios' column name
-        for col_name_raw in ['banios', 'Banios']:
-            if col_name_raw in df.columns:
-                logger.info(f"'{col_name_raw}' RAW Dtype: {df[col_name_raw].dtype}")
-                logger.info(f"'{col_name_raw}' RAW head:\n{df[col_name_raw].head().to_string()}")
-                logger.info(f"'{col_name_raw}' RAW null count: {df[col_name_raw].isnull().sum()}")
-            else:
-                logger.info(f"'{col_name_raw}' column does NOT exist RAW from Excel.")
+        # Check for common variations of 'banos' column name
+        banos_variations = ['banos', 'Banos', 'Banio', 'Banios', 'banios']
+        medios_banos_variations = ['medios_banos', 'mediosbanos', 'MediosBanos', 'mediosBanios']
 
-        # Check for common variations of 'mediosBanios' column name
-        for col_name_raw in ['medios_banios', 'mediosBanios']:
+        for col_name_raw in banos_variations + medios_banos_variations:
             if col_name_raw in df.columns:
                 logger.info(f"'{col_name_raw}' RAW Dtype: {df[col_name_raw].dtype}")
                 logger.info(f"'{col_name_raw}' RAW head:\n{df[col_name_raw].head().to_string()}")
@@ -51,12 +45,16 @@ def clean_and_transform_data(file_path):
             'comisionACompartirInmobiliariasExternas': 'comision_compartir_externas',
             'm2C': 'm2_construccion',
             'm2T': 'm2_terreno',
-            'mediosBanios': 'medios_banios',
+            'mediosbanos': 'medios_banos',
+            'MediosBanios': 'medios_banos',
             'nivelesConstruidos': 'niveles_construidos',
             'apellidoP': 'apellido_paterno_agente',
             'apellidoM': 'apellido_materno_agente',
             'nombre': 'nombre_agente',
-            'banios': 'banios' # Asegurar que 'banios' se renombra a sí mismo si ya está en minúsculas
+            'Banio': 'banos',
+            'Banios': 'banos',
+            'banios': 'banos',
+            'banos': 'banos' # Asegurar que 'banos' se renombra a sí mismo si ya está en minúsculas
         }, inplace=True)
         logger.info("[CLEANING] Columnas renombradas.")
 
@@ -80,41 +78,40 @@ def clean_and_transform_data(file_path):
         for col in ['recamaras', 'niveles_construidos', 'edad', 'estacionamientos']:
             if col in df.columns:
                 df[col] = df[col].astype('Int64') # Permite nulos
-        
+
         # Para precio, comision, m2_construccion, m2_terreno, latitud, longitud
         for col in ['precio', 'comision', 'comision_compartir_externas', 'm2_construccion', 'm2_terreno', 'latitud', 'longitud']:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce') # Convertir a numérico, nulos si hay error
 
-        # --- Manejo específico para banios y medios_banios: convertir a numérico y rellenar NaN con 0 ---
-        for col in ['banios', 'medios_banios']:
+        # --- Manejo específico para banos y medios_banos: convertir a numérico y rellenar NaN con 0 ---
+        for col in ['banos', 'medios_banos']:
             if col in df.columns:
-                # Convertir a string primero para manejar valores no numéricos como texto o espacios
-                # Luego limpiar espacios, comas, etc., convertir a numérico, forzando errores a NaN, y finalmente rellenar NaN con 0.0
                 df[col] = pd.to_numeric(
-                    df[col].astype(str).str.strip().str.replace(',', ''), 
+                    df[col].astype(str).str.strip().str.replace(',', ''),
                     errors='coerce'
                 ).fillna(0.0)
             else:
-                df[col] = 0.0 # Asegurar que la columna exista y sea 0.0 si no estaba presente
+                df[col] = 0.0
 
-        logger.info("[CLEANING] Columnas numéricas procesadas.")
+        # --- Calcular banos_totales ---
+        df['banos_totales'] = df['banos'] + (df['medios_banos'] * 0.5)
+        logger.info("[CLEANING] Columna 'banos_totales' calculada.")
+        logger.info(f"Estadísticas de 'banos_totales':\n{df['banos_totales'].describe().to_string()}")
+        logger.info(f"Propiedades con baños totales > 0: {len(df[df['banos_totales'] > 0])}")
 
-        # --- DEBUGGING BAÑOS EN DATA_CLEANER (after fillna) ---
-        logger.info("[CLEANING] Debugging banos/medios_banos after numeric conversion and fillna(0):")
-        if 'banios' in df.columns:
-            logger.info(f"'banios' Dtype: {df['banios'].dtype}")
-            logger.info(f"'banios' head:\n{df['banios'].head().to_string()}")
-            logger.info(f"'banios' null count: {df['banios'].isnull().sum()}")
+        # Eliminar las columnas originales de baños
+        df.drop(columns=['banos', 'medios_banos'], inplace=True)
+        logger.info("[CLEANING] Columnas 'banos' y 'medios_banos' eliminadas.")
+
+        # --- DEBUGGING BAÑOS EN DATA_CLEANER (after calculation) ---
+        logger.info("[CLEANING] Debugging banos_totales after calculation:")
+        if 'banos_totales' in df.columns:
+            logger.info(f"'banos_totales' Dtype: {df['banos_totales'].dtype}")
+            logger.info(f"'banos_totales' head:\n{df['banos_totales'].head().to_string()}")
+            logger.info(f"'banos_totales' null count: {df['banos_totales'].isnull().sum()}")
         else:
-            logger.info("'banios' column does NOT exist in DataFrame after rename.")
-
-        if 'medios_banios' in df.columns:
-            logger.info(f"'medios_banios' Dtype: {df['medios_banios'].dtype}")
-            logger.info(f"'medios_banios' head:\n{df['medios_banios'].head().to_string()}")
-            logger.info(f"'medios_banios' null count: {df['medios_banios'].isnull().sum()}")
-        else:
-            logger.info("'medios_banios' column does NOT exist in DataFrame after rename.")
+            logger.info("'banos_totales' column does NOT exist in DataFrame after calculation.")
         logger.info("--------------------------------------------------")
 
         # 6. Eliminar columnas excluidas

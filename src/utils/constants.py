@@ -15,7 +15,7 @@ DB_COLUMNS = [
     'clave', 'clave_oficina', 'subtipo_propiedad', 'calle', 'numero',
     'colonia', 'municipio', 'latitud', 'longitud', 'codigo_postal',
     'precio', 'comision', 'comision_compartir_externas', 'm2_construccion',
-    'm2_terreno', 'recamaras', 'banios', 'medios_banios', 'cocina',
+    'm2_terreno', 'recamaras', 'banos_totales', 'cocina',
     'niveles_construidos', 'edad', 'estacionamientos', 'descripcion',
     'nombre_agente', 'apellido_paterno_agente', 'apellido_materno_agente'
 ]

@@ -44,8 +44,11 @@ def test_create_properties_table_success(mock_env_vars, mock_db_connection, mock
     mock_connect.assert_called_once_with(
         dbname='test_db', user='test_user', password='test_pass', host='test_host', port='5432'
     )
-    mock_cursor.execute.assert_called_once_with("CREATE TABLE properties (id INT);")
-    mock_conn.commit.assert_called_once()
+    mock_cursor.execute.assert_any_call("CREATE TABLE properties (id INT);")
+    mock_cursor.execute.assert_any_call("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
+    assert mock_cursor.execute.call_count == 2
+    mock_cursor.execute.assert_any_call("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
+    assert mock_conn.commit.call_count == 2
     mock_cursor.close.assert_called_once()
     mock_conn.close.assert_called_once()
 

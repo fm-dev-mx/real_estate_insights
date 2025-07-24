@@ -86,6 +86,7 @@ class PropertyRepository:
         conn = None
         try:
             conn = self._get_connection()
+            logger.info("[DB_RETRIEVE] Conexión a la base de datos exitosa.")
 
             query = "SELECT * FROM properties WHERE 1=1"
             params = {}
@@ -108,7 +109,7 @@ class PropertyRepository:
                 query += " AND recamaras >= %(min_bedrooms)s"
                 params['min_bedrooms'] = int(min_bedrooms)
             if min_bathrooms is not None:
-                query += " AND banios >= %(min_bathrooms)s"
+                query += " AND banos_totales >= %(min_bathrooms)s"
                 params['min_bathrooms'] = float(min_bathrooms)
             if max_age_years is not None:
                 query += " AND edad <= %(max_age_years)s"
@@ -139,36 +140,24 @@ class PropertyRepository:
                 query += " AND comision >= %(min_commission)s"
                 params['min_commission'] = float(min_commission)
 
-            df = pd.read_sql(query, conn, params=params)
-            
-            # --- DEBUGGING BAÑOS EN PROPERTY_REPOSITORY ---
-            logger.info("[DB_RETRIEVE] Debugging banos/medios_banos after DB retrieval:")
-            if 'banios' in df.columns:
-                logger.info(f"'banios' column exists. Dtype: {df['banios'].dtype}")
-                logger.info(f"'banios' head:\n{df['banios'].head().to_string()}")
-                logger.info(f"'banios' null count: {df['banios'].isnull().sum()}")
-            else:
-                logger.info("'banios' column does NOT exist in retrieved DataFrame.")
+            logger.info(f"[DB_RETRIEVE] Ejecutando consulta SQL: {query}")
+            logger.info(f"[DB_RETRIEVE] Con parámetros: {params}")
 
-            if 'medios_banios' in df.columns:
-                logger.info(f"'medios_banios' column exists. Dtype: {df['medios_banios'].dtype}")
-                logger.info(f"'medios_banios' head:\n{df['medios_banios'].head().to_string()}")
-                logger.info(f"'medios_banios' null count: {df['medios_banios'].isnull().sum()}")
-            else:
-                logger.info("'medios_banios' column does NOT exist in retrieved DataFrame.")
-            logger.info("--------------------------------------------------")
+            df = pd.read_sql(query, conn, params=params)
+            logger.info(f"[DB_RETRIEVE] Consulta SQL ejecutada. Se encontraron {len(df)} propiedades.")
 
             return df
 
         except psycopg2.Error as e:
-            print(f"Error de PostgreSQL al cargar propiedades: {e}")
+            logger.error(f"[DB_RETRIEVE] Error de PostgreSQL al cargar propiedades: {e}")
         except ValueError as e:
-            print(f"Error de configuración de la base de datos: {e}")
+            logger.error(f"[DB_RETRIEVE] Error de configuración de la base de datos: {e}")
         except Exception as e:
-            print(f"Un error inesperado ocurrió al cargar propiedades: {e}")
+            logger.error(f"[DB_RETRIEVE] Un error inesperado ocurrió al cargar propiedades: {e}")
             import traceback
             traceback.print_exc()
         finally:
             if conn:
                 conn.close()
+                logger.info("[DB_RETRIEVE] Conexión a la base de datos cerrada.")
         return pd.DataFrame()

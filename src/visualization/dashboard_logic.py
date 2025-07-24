@@ -33,18 +33,17 @@ def apply_dashboard_transformations(properties_df):
     else:
         properties_df['m2_terreno'] = pd.NA # Usar pd.NA para valores faltantes
 
-    # Unificar baños totales (sumando medios baños)
-    # Convertir a float para asegurar compatibilidad con NaN y luego a pd.NA para enteros nulos
-    banos_series = properties_df['banos'].astype(float) if 'banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
-    medios_banos_series = properties_df['medios_banos'].astype(float) if 'medios_banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
+    # Unificar baños totales (sumando medios baños) - CÁLCULO MOVIDO A data_cleaner.py
+    # banos_series = properties_df['banos'].astype(float) if 'banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
+    # medios_banos_series = properties_df['medios_banos'].astype(float) if 'medios_banos' in properties_df.columns else pd.Series([pd.NA] * len(properties_df))
 
-    properties_df['banos_totales'] = banos_series.fillna(0) + (medios_banos_series.fillna(0) * 0.5)
-    # Convertir a Int64 si no hay decimales y no es NaN, o dejar como float si hay decimales o NaN
-    properties_df['banos_totales'] = properties_df['banos_totales'].apply(lambda x: int(x) if pd.notna(x) and x == int(x) else x)
+    # properties_df['banos_totales'] = banos_series.fillna(0) + (medios_banos_series.fillna(0) * 0.5)
+    # # Convertir a Int64 si no hay decimales y no es NaN, o dejar como float si hay decimales o NaN
+    # properties_df['banos_totales'] = properties_df['banos_totales'].apply(lambda x: int(x) if pd.notna(x) and x == int(x) else x)
 
     # Eliminar columnas de fechas y cocina
     columns_to_drop = [
-        'fecha_alta', 'fecha_creacion', 'fecha_modificacion', 'cocina', 'banos', 'medios_banos',
+        'fecha_alta', 'fecha_creacion', 'fecha_modificacion', 'cocina',
         'apellido_paterno_agente', 'apellido_materno_agente', 'created_at', 'updated_at',
         'latitud', 'longitud', 'codigo_postal', 'comision_compartir_externas'
     ]

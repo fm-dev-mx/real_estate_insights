@@ -57,7 +57,7 @@ Para continuar con la implementación de las nuevas funcionalidades, necesito tu
     *   Estructura de almacenamiento: [x] a) [ ] b) [ ] c)
 
 *   **2. Extracción y Comparación de Datos:**
-    *   Campos clave: [ ] a) [ ] b) [x] c) `precio, m2_construccion, m2_terreno, recamaras, banios, edad, descripcion`
+    *   Campos clave: [ ] a) [ ] b) [x] c) `precio, m2_construccion, m2_terreno, recamaras, banos, edad, descripcion`
 
 *   **3. Análisis Visual:**
     *   Enfoque: [x] a) [ ] b)

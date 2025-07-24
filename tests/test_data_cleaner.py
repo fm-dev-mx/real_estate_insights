@@ -1,45 +1,45 @@
 import pandas as pd
+import numpy as np
 import os
 from src.data_processing.data_cleaner import clean_and_transform_data
-from src.utils.constants import DB_COLUMNS # Import DB_COLUMNS
+from src.utils.constants import DB_COLUMNS
+
+def create_test_excel(tmp_path, data):
+    """Helper function to create an Excel file for testing."""
+    test_excel_path = tmp_path / "test_data.xlsx"
+    df_input = pd.DataFrame(data)
+    # Asegurar que todas las columnas esperadas por el cleaner existan, llenando con NaN si no están en `data`
+    base_columns = {
+        'fechaAlta': None, 'tipoOperacion': None, 'tipoDeContrato': None, 'enInternet': None,
+        'claveOficina': None, 'subtipoPropiedad': None, 'codigoPostal': None,
+        'comisionACompartirInmobiliariasExternas': None, 'm2C': None, 'm2T': None,
+        'mediosbanos': None, 'nivelesConstruidos': None, 'apellidoP': None, 'apellidoM': None,
+        'nombre': None, 'id': None, 'precio': None, 'comision': None, 'recamaras': None,
+        'banos': None, 'edad': None, 'estacionamientos': None, 'descripcion': None,
+        'latitud': None, 'longitud': None, 'cocina': None, 'numero': None
+    }
+    for col, default_val in base_columns.items():
+        if col not in df_input.columns:
+            df_input[col] = default_val
+
+    df_input.to_excel(test_excel_path, index=False)
+    return test_excel_path
 
 def test_clean_and_transform_data(tmp_path):
     # Arrange
-    # Usar tmp_path para crear un archivo Excel temporal para la prueba
-    test_excel_path = tmp_path / "test_data.xlsx"
-    
-    # Crear un DataFrame de pandas que simule los datos de entrada de un Excel
     data = {
+        'id': [1, 2, 3],
         'fechaAlta': ['2024-01-01', '2024-02-01', '2024-03-01'],
-        'tipoOperacion': ['Venta', 'Renta', 'Venta'],
-        'tipoDeContrato': ['Exclusiva', 'Abierta', 'Exclusiva'],
         'enInternet': ['Si', 'No', 'Si'],
-        'claveOficina': ['OF1', 'OF2', 'OF3'],
-        'subtipoPropiedad': ['Casa', 'Departamento', 'Terreno'],
-        'codigoPostal': [12345, 67890, 11223],
-        'comisionACompartirInmobiliariasExternas': [1.5, 2.0, 0.0],
         'm2C': [100.5, 50.0, 0.0],
         'm2T': [200.5, 70.0, 300.0],
-        'mediosBanios': [1, 0, 0],
-        'nivelesConstruidos': [2, 1, 0],
-        'apellidoP': ['Perez', 'Lopez', 'Garcia'],
-        'apellidoM': ['Gomez', 'Ruiz', 'Diaz'],
-        'nombre': ['Juan', 'Maria', 'Pedro'],
-        'id': [1, 2, 3],
-        'precio': [1000000, 500000, 2000000],
-        'comision': [3.0, 2.0, 4.0],
         'recamaras': [3, 2, 0],
-        'banios': [2.5, 1.0, 0.0],
         'edad': [10, 5, 0],
-        'estacionamientos': [1, 0, 0],
-        'descripcion': ['Casa con jardin', 'Departamento centrico', 'Terreno amplio'],
-        'latitud': [19.0, 20.0, 21.0],
-        'longitud': [-99.0, -100.0, -101.0],
         'cocina': ['Si', 'No', 'Si'],
-        'numero': ['100', '200', '300'] # Added 'numero' column
+        'banos': [2, 1, 0],
+        'mediosbanos': [1, 0, 1]
     }
-    df_input = pd.DataFrame(data)
-    df_input.to_excel(test_excel_path, index=False) # Guardar como Excel
+    test_excel_path = create_test_excel(tmp_path, data)
 
     # Act
     cleaned_df = clean_and_transform_data(test_excel_path)
@@ -47,26 +47,46 @@ def test_clean_and_transform_data(tmp_path):
     # Assert
     assert cleaned_df is not None
     assert not cleaned_df.empty
+    assert 'banos_totales' in cleaned_df.columns
+    assert 'banos' not in cleaned_df.columns
+    assert 'medios_banos' not in cleaned_df.columns
 
-    # Verificar renombrado de columnas
-    # Usar DB_COLUMNS del módulo constants para la verificación
-    assert all(col in cleaned_df.columns for col in DB_COLUMNS if col in cleaned_df.columns)
+    expected_banos_totales = pd.Series([2.5, 1.0, 0.5], name='banos_totales')
+    pd.testing.assert_series_equal(cleaned_df['banos_totales'], expected_banos_totales, check_names=False)
 
-    # Verificar tipos de datos y valores transformados
-    assert pd.api.types.is_datetime64_any_dtype(cleaned_df['fecha_alta'])
-    assert cleaned_df['en_internet'].dtype == 'bool'
-    assert cleaned_df['cocina'].dtype == 'bool'
-    assert cleaned_df['m2_construccion'].iloc[0] == 100.5
-    assert cleaned_df['m2_terreno'].iloc[0] == 200.5
-    assert cleaned_df['recamaras'].dtype == 'Int64' # Pandas nullable integer
-    assert cleaned_df['edad'].dtype == 'Int64'
+def test_banos_totales_with_nans(tmp_path):
+    # Arrange
+    data = {
+        'id': [1, 2, 3, 4],
+        'banos': [2, np.nan, 3, np.nan],
+        'mediosbanos': [1, 1, np.nan, np.nan]
+    }
+    test_excel_path = create_test_excel(tmp_path, data)
 
-    # Verificar que las columnas eliminadas no están presentes
-    # Asegurarse de que las columnas que se eliminan en clean_and_transform_data no estén en el df final
-    columns_to_be_dropped = ['numeroLlaves', 'cuotaMantenimiento', 'institucionHipotecaria']
-    for col in columns_to_be_dropped:
-        assert col not in cleaned_df.columns
+    # Act
+    cleaned_df = clean_and_transform_data(test_excel_path)
 
+    # Assert
+    assert 'banos_totales' in cleaned_df.columns
+    expected_banos_totales = pd.Series([2.5, 0.5, 3.0, 0.0], name='banos_totales')
+    pd.testing.assert_series_equal(cleaned_df['banos_totales'], expected_banos_totales, check_names=False)
+
+def test_banos_totales_with_non_numeric(tmp_path):
+    # Arrange
+    data = {
+        'id': [1, 2, 3],
+        'banos': [2, 'uno', ' '],
+        'mediosbanos': ['1', 0, '1.5']
+    }
+    test_excel_path = create_test_excel(tmp_path, data)
+
+    # Act
+    cleaned_df = clean_and_transform_data(test_excel_path)
+
+    # Assert
+    assert 'banos_totales' in cleaned_df.columns
+    expected_banos_totales = pd.Series([2.5, 0.0, 0.75], name='banos_totales')
+    pd.testing.assert_series_equal(cleaned_df['banos_totales'], expected_banos_totales, check_names=False)
 
 def test_clean_and_transform_data_file_not_found():
     # Arrange

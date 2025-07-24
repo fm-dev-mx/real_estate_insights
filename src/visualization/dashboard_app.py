@@ -25,14 +25,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Dashboard app started.")
 
-from utils.constants import (
+from src.utils.constants import (
     STATUS_EN_PROMOCION, STATUS_CON_INTENCION, STATUS_VENDIDAS,
     CONTRACT_TYPE_EXCLUSIVA, CONTRACT_TYPE_OPCION
 )
-from data_access.property_repository import PropertyRepository
-from visualization.dashboard_logic import apply_dashboard_transformations
-from data_processing.data_validator import get_incomplete_properties
-from data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR
+from src.data_access.property_repository import PropertyRepository
+from src.visualization.dashboard_logic import apply_dashboard_transformations
+from src.data_processing.data_validator import get_incomplete_properties
+from src.data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR
 
 load_dotenv() # Cargar variables de entorno desde .env
 
@@ -193,7 +193,7 @@ if not properties_df.empty:
 
     cols_header = st.columns(col_widths)
     headers = [col.replace("_", " ").title() for col in columns_to_display]
-    
+
     # Añadir el encabezado para la columna de PDF/Acción
     if selected_view_name == "Inversión":
         headers[-1] = "PDF Disponible"

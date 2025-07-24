@@ -2,7 +2,7 @@
 
 import pandas as pd
 import os
-from data_collection.download_pdf import PDF_DOWNLOAD_BASE_DIR
+from src.data_collection.download_pdf import PDF_DOWNLOAD_BASE_DIR
 
 def apply_dashboard_transformations(properties_df):
     """
@@ -36,9 +36,12 @@ def apply_dashboard_transformations(properties_df):
         properties_df['m2_terreno'] = pd.NA # Usar pd.NA para valores faltantes
 
     # Añadir columna para indicar si el PDF está disponible localmente
-    properties_df['pdf_available'] = properties_df['id'].apply(
-        lambda x: os.path.exists(os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{x}.pdf"))
-    )
+    if 'id' in properties_df.columns:
+        properties_df['pdf_available'] = properties_df['id'].apply(
+            lambda x: os.path.exists(os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{x}.pdf"))
+        )
+    else:
+        properties_df['pdf_available'] = False
 
     # Eliminar columnas de fechas y cocina
     columns_to_drop = [

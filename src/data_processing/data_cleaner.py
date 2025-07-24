@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 import os # Added this import
-from ..utils.constants import DB_COLUMNS
+from src.utils.constants import DB_COLUMNS
 
 logger = logging.getLogger(__name__)
 

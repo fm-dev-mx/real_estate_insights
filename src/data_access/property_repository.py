@@ -3,7 +3,7 @@ import psycopg2
 from psycopg2 import extras
 import logging
 
-from .database_connection import get_db_connection
+from src.data_access.database_connection import get_db_connection
 
 logger = logging.getLogger(__name__)
 

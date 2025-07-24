@@ -25,15 +25,15 @@ Las siguientes funciones y módulos ya cuentan con pruebas unitarias implementad
 *   **`src/db_setup/create_db_table.py`**
     *   `create_properties_table`: Probar la creación de la tabla `properties` en la base de datos, incluyendo el manejo de errores y la verificación de la conexión.
 
+*   **`src/data_collection/download_pdf.py`**
+    *   `download_property_pdf`: Probar la descarga exitosa de un PDF, el manejo de errores (ej. 404 Not Found) y la omisión de descarga si el archivo ya existe.
+
 ## 📝 Pruebas Pendientes
 
 Las siguientes funciones y módulos requieren la implementación de pruebas unitarias para asegurar su correcto funcionamiento y robustez:
 
 *   **`src/data_collection/download_inventory.py`**
     *   Funciones de descarga y automatización web: Probar el proceso de login y descarga de archivos (estas pruebas pueden ser más complejas debido a la interacción con la UI).
-
-*   **`src/data_collection/download_pdf.py`**
-    *   `download_property_pdf`: Probar la descarga exitosa de un PDF, el manejo de errores (ej. 404 Not Found) y la omisión de descarga si el archivo ya existe.
 
 ## 🚀 Cómo Ejecutar las Pruebas
 

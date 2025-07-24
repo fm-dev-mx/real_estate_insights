@@ -1,6 +1,36 @@
 import os
 import sys
 import subprocess
+import logging
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+
+# --- LOGGING CONFIGURATION ---
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, "app.log")
+
+# Configurar el logger principal
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG) # Nivel mínimo de captura
+
+# Formateador
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Manejador de archivo rotativo
+file_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1024*1024*5, backupCount=2, encoding='utf-8')
+file_handler.setLevel(logging.INFO) # Nivel para el archivo
+file_handler.setFormatter(formatter)
+
+# Manejador de consola
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG) # Nivel para la consola
+console_handler.setFormatter(formatter)
+
+# Añadir manejadores al logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 def run_streamlit():
     """

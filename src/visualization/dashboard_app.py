@@ -49,6 +49,36 @@ property_repo = PropertyRepository(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PO
 st.set_page_config(layout="wide")
 st.title('Análisis de Propiedades Inmobiliarias')
 
+# --- Columnas de la tabla según la vista seleccionada ---
+FIXED_INITIAL_COLUMNS = ["id", "colonia", "precio"]
+
+SUMMARY_VIEW_COLUMNS = FIXED_INITIAL_COLUMNS + [
+    "m2_construccion", "m2_terreno", "recamaras", "banos_totales", "edad"
+]
+
+DETAILED_VIEW_COLUMNS = FIXED_INITIAL_COLUMNS + [
+    "tipo_operacion", "tipo_contrato", "status", "nombre_agente", "comision", "descripcion"
+]
+
+INVESTMENT_VIEW_COLUMNS = FIXED_INITIAL_COLUMNS + [
+    "dias_en_mercado", "comision", "comision_compartir_externas", "edad", "estacionamientos", "pdf_available"
+]
+
+VIEW_OPTIONS = {
+    "Resumen": SUMMARY_VIEW_COLUMNS,
+    "Detallada": DETAILED_VIEW_COLUMNS,
+    "Inversión": INVESTMENT_VIEW_COLUMNS,
+}
+
+selected_view_name = st.radio(
+    "Selecciona la vista de la tabla:",
+    list(VIEW_OPTIONS.keys()),
+    horizontal=True,
+    key="view_selector"
+)
+
+columns_to_display = VIEW_OPTIONS[selected_view_name]
+
 # Sidebar para filtros interactivos
 st.sidebar.header('Filtros de Propiedades')
 
@@ -153,54 +183,82 @@ if not properties_df.empty:
     st.write(f"Total de propiedades encontradas: {len(properties_df)}")
 
     # Custom display for properties with PDF download/view buttons
-    cols = st.columns([0.5, 1, 1, 1, 1, 1, 1, 1]) # Adjust column widths as needed
-    headers = ["ID", "Precio", "M2 Const.", "M2 Terr.", "Recámaras", "Baños", "Días en Mercado", "PDF"]
-    for col, header in zip(cols, headers):
-        col.write(f"**{header}**")
+    # Ajustar el ancho de las columnas dinámicamente
+    num_cols = len(columns_to_display) + 1 # +1 para el botón de PDF o indicador
+    col_widths = [0.5] * num_cols # Ancho base para todas las columnas
+    # Ajustes específicos de ancho para algunas columnas
+    if "precio" in columns_to_display: col_widths[columns_to_display.index("precio")] = 1
+    if "descripcion" in columns_to_display: col_widths[columns_to_display.index("descripcion")] = 2
+    if "colonia" in columns_to_display: col_widths[columns_to_display.index("colonia")] = 1.5
+
+    cols_header = st.columns(col_widths)
+    headers = [col.replace("_", " ").title() for col in columns_to_display]
+    
+    # Añadir el encabezado para la columna de PDF/Acción
+    if selected_view_name == "Inversión":
+        headers[-1] = "PDF Disponible"
+    else:
+        headers.append("PDF")
+
+    for col_idx, header in enumerate(headers):
+        cols_header[col_idx].write(f"**{header}**")
 
     for index, row in properties_df.iterrows():
-        cols = st.columns([0.5, 1, 1, 1, 1, 1, 1, 1])
+        cols_data = st.columns(col_widths)
         property_id = row['id']
         pdf_local_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
-        cols[0].write(property_id)
-        cols[1].write(f"${row['precio']:,}")
-        cols[2].write(f"{row['m2_construccion']:.0f}")
-        cols[3].write(f"{row['m2_terreno']:.0f}")
-        cols[4].write(f"{row['recamaras']:.0f}")
-        
-        # Manejar la visualización de banos_totales para mostrar N/A si es NaN
-        banos_display = f"{row['banos_totales']:.1f}" if pd.notna(row['banos_totales']) else "N/A"
-        cols[5].write(banos_display)
+        for col_idx, col_name in enumerate(columns_to_display):
+            if col_name == "precio":
+                cols_data[col_idx].write(f"${row[col_name]:,}")
+            elif col_name == "banos_totales":
+                cols_data[col_idx].write(f"{row[col_name]:.1f}" if pd.notna(row[col_name]) else "N/A")
+            elif col_name == "dias_en_mercado":
+                cols_data[col_idx].write(f"{row[col_name]:.0f}")
+            elif col_name == "descripcion":
+                # Truncar descripción para la vista detallada
+                description_text = row[col_name]
+                if pd.notna(description_text) and len(description_text) > 100:
+                    cols_data[col_idx].write(f"{description_text[:97]}...")
+                else:
+                    cols_data[col_idx].write(description_text)
+            elif col_name == "pdf_available":
+                # Mostrar un checkmark o X para la vista de inversión
+                if row[col_name]:
+                    cols_data[col_idx].write("✅")
+                else:
+                    cols_data[col_idx].write("❌")
+            else:
+                cols_data[col_idx].write(row[col_name])
 
-        cols[6].write(f"{row['dias_en_mercado']:.0f}")
+        # Lógica para el botón de PDF (o indicador)
+        if selected_view_name != "Inversión": # Si no es la vista de inversión, mostrar el botón
+            if os.path.exists(pdf_local_path):
+                button_label = "Ver PDF"
+                button_type = "primary"
+            else:
+                button_label = "Descargar PDF"
+                button_type = "secondary"
 
-        if os.path.exists(pdf_local_path):
-            button_label = "Ver PDF"
-            button_type = "primary"
-        else:
-            button_label = "Descargar PDF"
-            button_type = "secondary"
-
-        if cols[7].button(button_label, key=f"pdf_action_{property_id}", type=button_type):
-            if button_label == "Ver PDF":
-                try:
-                    subprocess.Popen([pdf_local_path], shell=True)
-                    st.success(f"Abriendo PDF de {property_id}...")
-                except Exception as e:
-                    st.error(f"Error al abrir PDF de {property_id}: {e}")
-            else: # Descargar PDF
-                with st.spinner(f"Descargando PDF de {property_id}..."):
-                    progress_text = "Operación en progreso. Por favor, espere."
-                    my_bar = st.progress(0, text=progress_text)
-                    downloaded_path = download_property_pdf(property_id)
-                    if downloaded_path:
-                        my_bar.progress(100, text="Descarga completa!")
-                        st.success(f"PDF de {property_id} descargado en {downloaded_path}")
-                        st.rerun() # Rerun to update button state
-                    else:
-                        my_bar.progress(0, text="Fallo en la descarga.")
-                        st.error(f"Fallo al descargar PDF de {property_id}.")
+            if cols_data[num_cols - 1].button(button_label, key=f"pdf_action_{property_id}", type=button_type):
+                if button_label == "Ver PDF":
+                    try:
+                        subprocess.Popen([pdf_local_path], shell=True)
+                        st.success(f"Abriendo PDF de {property_id}...")
+                    except Exception as e:
+                        st.error(f"Error al abrir PDF de {property_id}: {e}")
+                else: # Descargar PDF
+                    with st.spinner(f"Descargando PDF de {property_id}..."):
+                        progress_text = "Operación en progreso. Por favor, espere."
+                        my_bar = st.progress(0, text=progress_text)
+                        downloaded_path = download_property_pdf(property_id)
+                        if downloaded_path:
+                            my_bar.progress(100, text="Descarga completa!")
+                            st.success(f"PDF de {property_id} descargado en {downloaded_path}")
+                            st.rerun() # Rerun to update button state
+                        else:
+                            my_bar.progress(0, text="Fallo en la descarga.")
+                            st.error(f"Fallo al descargar PDF de {property_id}.")
 
     # Tabla adicional para propiedades con campos faltantes
     st.subheader('Propiedades con Campos Faltantes')

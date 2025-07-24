@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Añadido (Added)
+
+*   **Módulo de descarga de PDFs de propiedades.**
+    *   Se ha creado `src/data_collection/download_pdf.py` para descargar los archivos PDF asociados a cada propiedad. Esta funcionalidad es clave para las próximas etapas de extracción de datos.
+    *   **Archivos Involucrados:** `src/data_collection/download_pdf.py` (Añadido).
+
+### Cambiado (Changed)
+
+*   **Refactorización del proceso de limpieza de datos.**
+    *   **Descripción:** La lógica de limpieza y transformación de datos se ha movido de `clean_data.py` a una función dedicada `clean_and_transform_data` en `data_cleaner.py`, mejorando la modularidad y la testeabilidad.
+    *   Se ha mejorado la limpieza de datos de baños, creando una nueva columna `banos_totales`.
+    *   **Archivos Involucrados:** `src/data_processing/clean_data.py`, `src/data_processing/data_cleaner.py`.
+
 ## [2025-07-22]
 
 ### Corregido (Fixed)

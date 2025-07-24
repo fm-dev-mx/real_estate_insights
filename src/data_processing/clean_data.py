@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import logging
 from datetime import datetime
+import psycopg2
 
 from dotenv import load_dotenv
 from ..utils.constants import DB_COLUMNS
@@ -49,7 +50,7 @@ def find_target_excel_file(directory):
     Prioriza los archivos .xlsx sobre los .xls y convierte el primer .xls si no hay .xlsx.
     """
     excel_files = [f for f in os.listdir(directory) if f.endswith('.xlsx') or f.endswith('.xls')]
-    
+
     if not excel_files:
         logger.warning(f"[MAIN] No se encontraron archivos Excel (.xls o .xlsx) en {directory}.")
         return None
@@ -74,7 +75,7 @@ def find_target_excel_file(directory):
             else:
                 logger.error(f"[MAIN] Falló la conversión de {xls_file_path}. No se puede proceder con el análisis.")
                 return None
-    
+
     return None
 
 def main():
@@ -87,7 +88,7 @@ def main():
         if not DB_PASSWORD:
             logger.error("Error: La variable de entorno REI_DB_PASSWORD no está configurada.")
             raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")
-        
+
         conn_check = get_db_connection(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
         logger.info("[MAIN] Verificación de conexión a la base de datos exitosa.")
         conn_check.close()
@@ -97,7 +98,7 @@ def main():
         return # Salir del script si la conexión falla
 
     target_file = find_target_excel_file(DOWNLOAD_DIR)
-    
+
     if target_file:
         cleaned_df = clean_and_transform_data(target_file)
         if cleaned_df is not None:

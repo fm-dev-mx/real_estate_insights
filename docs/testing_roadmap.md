@@ -32,6 +32,9 @@ Las siguientes funciones y módulos requieren la implementación de pruebas unit
 *   **`src/data_collection/download_inventory.py`**
     *   Funciones de descarga y automatización web: Probar el proceso de login y descarga de archivos (estas pruebas pueden ser más complejas debido a la interacción con la UI).
 
+*   **`src/data_collection/download_pdf.py`**
+    *   `download_property_pdf`: Probar la descarga exitosa de un PDF, el manejo de errores (ej. 404 Not Found) y la omisión de descarga si el archivo ya existe.
+
 ## 🚀 Cómo Ejecutar las Pruebas
 
 Para ejecutar todas las pruebas unitarias del proyecto, navega a la raíz del proyecto en tu terminal y ejecuta:

@@ -1,0 +1,34 @@
+1. Nivel de detalle en la tabla principal:
+   ¿Qué nivel de detalle necesitas ver en la tabla principal para una primera evaluación rápida? Mostrar varias opciones de vista: a, b y c (con nombres descriptivos).
+   a) Solo datos comerciales clave (ID, Precio, M2 Construcción, M2 Terreno, Recámaras, Baños, Días en Mercado, PDF).
+   b) También información operativa esencial (Status, Tipo Operación, Subtipo Propiedad, Colonia).
+   c) Un resumen más amplio que incluya antigüedad y estacionamientos.
+   d) Todas las columnas sugeridas para agregar.
+
+2. Columnas técnicas/secundarias:
+   ¿Cuáles de las siguientes columnas te interesaría ver directamente en la tabla principal, o preferirías que estuviera en una vista de detalles (ej. panel lateral o modal)? talvez estaria bien un boton de ver mas detalles o algo así en cada registro.
+   a) Antigüedad de la propiedad (Edad)
+   b) Estacionamientos (Estacionamientos)
+   c) Comisión (Comisión)
+   d) Tipo de contrato (tipo_contrato)
+   e) Si tiene cocina (cocina)
+   f) Niveles construidos (niveles_construidos)
+
+3. Botón de PDF:
+   ¿Deseas mantener el botón de PDF como una columna visible en la tabla principal, o preferirías que fuera una acción contextual (ej. un icono en la fila que al hacer clic muestre opciones, incluyendo "Ver/Descargar PDF")? Mantenerlo
+
+4. Columnas críticas faltantes:
+   ¿Hay alguna columna que consideres crítica para tu toma de decisiones que no esté actualmente en la tabla ni en las sugerencias para agregar? La columna calificación (que aun falta por determinar como se calculara)
+
+---
+
+5. Columnas sugeridas para agregar a la tabla principal:
+   Marca con una X las columnas que deseas agregar a la tabla principal.
+
+   [ ] Status
+   [ ] Tipo Operación
+   [x] Subtipo Propiedad
+   [x] Colonia
+   [x] Edad
+   [x] Estacionamientos
+   [x] Comisión

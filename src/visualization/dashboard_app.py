@@ -3,6 +3,27 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import subprocess
+import logging
+from datetime import datetime
+import sys
+
+# --- LOGGING CONFIGURATION ---
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, f"app_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE_PATH, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout) # Also log to console
+    ]
+)
+
+logger = logging.getLogger(__name__)
+logger.info("Dashboard app started.")
 
 from utils.constants import (
     STATUS_EN_PROMOCION, STATUS_CON_INTENCION, STATUS_VENDIDAS,
@@ -156,22 +177,29 @@ if not properties_df.empty:
 
         if os.path.exists(pdf_local_path):
             button_label = "Ver PDF"
-            button_key = f"view_pdf_{property_id}"
-            if cols[7].button(button_label, key=button_key):
+            button_type = "primary"
+        else:
+            button_label = "Descargar PDF"
+            button_type = "secondary"
+
+        if cols[7].button(button_label, key=f"pdf_action_{property_id}", type=button_type):
+            if button_label == "Ver PDF":
                 try:
                     subprocess.Popen([pdf_local_path], shell=True)
                     st.success(f"Abriendo PDF de {property_id}...")
                 except Exception as e:
                     st.error(f"Error al abrir PDF de {property_id}: {e}")
-        else:
-            button_label = "Descargar PDF"
-            button_key = f"download_pdf_{property_id}"
-            if cols[7].button(button_label, key=button_key):
+            else: # Descargar PDF
                 with st.spinner(f"Descargando PDF de {property_id}..."):
+                    progress_text = "Operación en progreso. Por favor, espere."
+                    my_bar = st.progress(0, text=progress_text)
                     downloaded_path = download_property_pdf(property_id)
                     if downloaded_path:
+                        my_bar.progress(100, text="Descarga completa!")
                         st.success(f"PDF de {property_id} descargado en {downloaded_path}")
+                        st.rerun() # Rerun to update button state
                     else:
+                        my_bar.progress(0, text="Fallo en la descarga.")
                         st.error(f"Fallo al descargar PDF de {property_id}.")
 
     # Tabla adicional para propiedades con campos faltantes

@@ -1,12 +1,8 @@
 import os
 import logging
 import time
+import requests
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
 
 logger = logging.getLogger(__name__)
 
@@ -21,26 +17,9 @@ os.makedirs(PDF_DOWNLOAD_BASE_DIR, exist_ok=True)
 PDF_BASE_URL = "https://plus.21onlinemx.com/ft/"
 PDF_SUFFIX = "/DTF/273/40120"
 
-# --- AUXILIARY FUNCTIONS (Copied from download_inventory.py) ---
-def setup_webdriver(download_dir):
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless') # Run in headless mode (no GUI)
-    options.add_argument('--start-maximized') # Start browser maximized
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-
-    # Configure download preferences for Chrome
-    prefs = {"download.default_directory" : download_dir,
-             "download.prompt_for_download": False,
-             "download.directory_upgrade": True,
-             "plugins.always_open_pdf_externally": True # To prevent Chrome from opening PDFs in the browser
-            }
-    options.add_experimental_option("prefs", prefs)
-    return webdriver.Chrome(options=options)
-
 def download_property_pdf(property_id: str) -> str or None:
     """
-    Descarga el PDF de una propiedad dado su ID.
+    Descarga el PDF de una propiedad dado su ID utilizando requests.
     Guarda el PDF en data/pdfs/[property_id].pdf.
 
     Args:
@@ -49,42 +28,30 @@ def download_property_pdf(property_id: str) -> str or None:
     Returns:
         str: La ruta absoluta al PDF descargado si la descarga fue exitosa, None en caso contrario.
     """
+    logger.info(f"[PDF_DOWNLOAD] Iniciando descarga para property_id: {property_id}")
     pdf_url = f"{PDF_BASE_URL}{property_id}{PDF_SUFFIX}"
+    logger.info(f"[PDF_DOWNLOAD] URL del PDF construida: {pdf_url}")
     pdf_local_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
     if os.path.exists(pdf_local_path):
-        logger.info(f"[PDF] PDF para la propiedad {property_id} ya existe en {pdf_local_path}.")
+        logger.info(f"[PDF_DOWNLOAD] PDF para la propiedad {property_id} ya existe en {pdf_local_path}. Saltando descarga.")
         return pdf_local_path
 
-    driver = None
     try:
-        driver = setup_webdriver(PDF_DOWNLOAD_BASE_DIR)
-        
-        logger.info(f"[PDF] Intentando descargar PDF para la propiedad {property_id} desde {pdf_url}...")
-        driver.get(pdf_url)
+        logger.info(f"[PDF_DOWNLOAD] Intentando descargar PDF desde: {pdf_url}")
+        response = requests.get(pdf_url, stream=True) # Usar stream para manejar archivos grandes
+        response.raise_for_status() # Lanza una excepción para códigos de estado HTTP erróneos
 
-        # Esperar un tiempo prudencial para que la descarga se complete
-        start_time = time.time()
-        download_timeout = 60 # segundos
-        while not os.path.exists(pdf_local_path) and (time.time() - start_time) < download_timeout:
-            time.sleep(1) # Esperar 1 segundo antes de re-verificar
+        with open(pdf_local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
         
-        if os.path.exists(pdf_local_path):
-            logger.info(f"[PDF] PDF de la propiedad {property_id} descargado exitosamente en {pdf_local_path}.")
-            return pdf_local_path
-        else:
-            logger.error(f"[PDF] Falló la descarga del PDF para la propiedad {property_id}. Archivo no encontrado después de {download_timeout}s.")
-            return None
+        logger.info(f"[PDF_DOWNLOAD] PDF de la propiedad {property_id} descargado exitosamente en {pdf_local_path}.")
+        return pdf_local_path
 
-    except TimeoutException as e:
-        logger.error(f"[PDF] Timeout al intentar descargar PDF para {property_id}: {e}")
-        return None
-    except WebDriverException as e:
-        logger.error(f"[PDF] WebDriver error al descargar PDF para {property_id}: {e}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[PDF_DOWNLOAD] Error de red o HTTP al descargar PDF para {property_id}. Error: {e}")
         return None
     except Exception as e:
-        logger.error(f"[PDF] Error inesperado al descargar PDF para {property_id}: {e}")
+        logger.error(f"[PDF_DOWNLOAD] Error inesperado al descargar PDF para {property_id}. Tipo: {type(e).__name__}, Mensaje: {e}")
         return None
-    finally:
-        if driver:
-            driver.quit()

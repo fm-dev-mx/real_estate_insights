@@ -15,10 +15,10 @@
 *   **Botón Dinámico:** En el dashboard de Streamlit, cada registro de propiedad tendrá un `st.button` que cambiará su etiqueta y acción.
     *   **Estado Inicial:** `[Descargar PDF]` si el PDF no existe localmente. Al hacer clic, llamará a una función `download_property_pdf(property_id, pdf_url)`.
     *   **Estado Posterior:** `[Ver PDF]` si el PDF ya está descargado. Al hacer clic, abrirá el PDF localmente (usando `os.startfile` en Windows o `subprocess.run` con el comando adecuado en otros OS).
-*   **Descarga desde Century21:**
-    *   Se creará `src/data_collection/download_pdf.py`.
+*   **Descarga de PDFs:**
+    *   Se utilizará `src/data_collection/download_pdf.py`.
     *   La URL del PDF se construirá usando el ID de la propiedad: `https://plus.21onlinemx.com/ft/[id]/DTF/273/40120`.
-    *   La descarga se realizará utilizando la sesión de Selenium ya autenticada (reutilizando la lógica de `download_inventory.py` o adaptándola).
+    *   La descarga se realizará directamente utilizando la librería `requests` (no se requiere Selenium para esta descarga).
     *   Almacenamiento local: `PDF_DOWNLOAD_DIR = os.path.join(BASE_DIR, 'data', 'pdfs')` (configurable en `.env`). Los archivos se guardarán como `data/pdfs/[property_id].pdf`.
 *   **Manejo de Errores y Feedback:**
     *   **Conexión/Descarga Fallida:** Usar bloques `try-except` para `requests` o `selenium` (si la descarga requiere interacción web). Mostrar `st.error("Error al descargar el PDF.")` y un `st.exception(e)` para depuración.

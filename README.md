@@ -17,9 +17,14 @@ This script handles all necessary setup, including configuring the Python path, 
 The complete automation flow consists of the following steps:
 
 ### Step 1: Inventory Data Collection
-Automates the login to a real estate portal and downloads the property inventory.
+Automates the login to a real estate portal and downloads the property inventory using Selenium WebDriver.
 
 **Script:** `src/data_collection/download_inventory.py`
+
+### Step 1.1: PDF Download
+Downloads individual property PDFs directly via HTTP requests (no WebDriver needed for this step).
+
+**Script:** `src/data_collection/download_pdf.py`
 
 ### Step 2: Data Cleaning, Validation, and Storage
 Cleans, transforms, and loads property data into the PostgreSQL database. This logic is now modularized for clarity and maintenance.
@@ -137,7 +142,7 @@ pip install -r src/data_collection/requirements.txt
 ```
 
 ### WebDriver
-Ensure `chromedriver.exe` (for Google Chrome) matches your browser version and is placed in the `src/data_collection/` directory.
+Ensure `chromedriver.exe` (for Google Chrome) matches your browser version and is placed in the `src/data_collection/` directory. This is required for the initial inventory download.
 
 ### Database Configuration
 Create a `.env` file in the project root with your PostgreSQL credentials. Refer to `.env.example` for the required variables.

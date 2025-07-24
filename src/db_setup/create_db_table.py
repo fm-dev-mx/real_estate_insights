@@ -2,30 +2,9 @@ import psycopg2
 import getpass
 import logging
 import os
-from datetime import datetime
 from src.utils.constants import DB_COLUMNS # Import DB_COLUMNS
 
-# --- CONFIGURATION ---
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs') # Usar el mismo directorio de logs
-
-# --- LOGGING CONFIGURATION ---
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, f"db_table_creation_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE_PATH),
-    ]
-)
-
 logger = logging.getLogger(__name__)
-console_handler = logging.StreamHandler()
-console_formatter = logging.Formatter('%(levelname)s - %(message)s')
-console_handler.setFormatter(console_formatter)
-logger.addHandler(console_handler)
 
 # --- SQL para crear la tabla properties ---
 create_table_sql = """
@@ -92,13 +71,13 @@ def create_properties_table():
         logger.info("Ejecutando sentencia CREATE TABLE...")
         cur.execute(create_table_sql)
         conn.commit()
-        logger.info("✅ Tabla 'properties' creada o ya existente en la base de datos.")
+        logger.info("Tabla 'properties' creada o ya existente en la base de datos.")
 
         # --- Migración: Asegurar que la columna banos_totales exista ---
         logger.info("Verificando/Añadiendo columna 'banos_totales' para compatibilidad...")
         cur.execute("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
         conn.commit()
-        logger.info("✅ Columna 'banos_totales' verificada/añadida.")
+        logger.info("Columna 'banos_totales' verificada/añadida.")
 
         cur.close()
 

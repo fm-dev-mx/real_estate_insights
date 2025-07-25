@@ -74,14 +74,94 @@ class PropertyRepository:
                 conn.close()
                 logger.info("[LOAD] Conexión a la base de datos cerrada.")
 
+    def get_property_details(self, property_id: str) -> pd.DataFrame or None:
+        """
+        Obtiene todos los detalles de una propiedad específica por su ID.
+        """
+        conn = None
+        try:
+            conn = self._get_connection()
+            logger.info(f"[DB_RETRIEVE] Obteniendo detalles para propiedad ID: {property_id}")
+            query = "SELECT * FROM properties WHERE id = %(property_id)s"
+            df = pd.read_sql(query, conn, params={'property_id': property_id})
+            if not df.empty:
+                logger.info(f"[DB_RETRIEVE] Detalles encontrados para propiedad ID: {property_id}")
+                return df.iloc[0] # Retorna la primera fila como una Serie
+            else:
+                logger.warning(f"[DB_RETRIEVE] No se encontraron detalles para propiedad ID: {property_id}")
+                return None
+        except psycopg2.Error as e:
+            logger.error(f"[DB_RETRIEVE] Error de PostgreSQL al obtener detalles de propiedad {property_id}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"[DB_RETRIEVE] Un error inesperado ocurrió al obtener detalles de propiedad {property_id}: {e}")
+            return None
+        finally:
+            if conn:
+                conn.close()
+                logger.info("[DB_RETRIEVE] Conexión a la base de datos cerrada.")
+
+    def update_property_field(self, property_id: str, field_name: str, new_value):
+        """
+        Actualiza un campo específico de una propiedad en la base de datos.
+        """
+        conn = None
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            logger.info(f"[UPDATE] Actualizando propiedad {property_id}, campo {field_name} a {new_value}")
+            
+            # Usar un placeholder para el valor y el nombre de la columna para evitar inyección SQL
+            update_sql = f"UPDATE properties SET {field_name} = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
+            cur.execute(update_sql, (new_value, property_id))
+            conn.commit()
+            logger.info(f"[UPDATE] Propiedad {property_id}, campo {field_name} actualizado exitosamente.")
+        except psycopg2.Error as e:
+            logger.error(f"[UPDATE] Error al actualizar propiedad {property_id}, campo {field_name}: {e}")
+            if conn:
+                conn.rollback()
+        except Exception as e:
+            logger.error(f"[UPDATE] Error inesperado al actualizar propiedad {property_id}, campo {field_name}: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+    def log_audit_entry(self, property_id: str, field_name: str, old_value, new_value, changed_by: str, change_source: str):
+        """
+        Registra una entrada en la tabla audit_log.
+        """
+        conn = None
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            logger.info(f"[AUDIT] Registrando auditoría para propiedad {property_id}, campo {field_name}")
+            
+            insert_sql = """
+            INSERT INTO audit_log (property_id, field_name, old_value, new_value, changed_by, change_source)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cur.execute(insert_sql, (property_id, field_name, old_value, new_value, changed_by, change_source))
+            conn.commit()
+            logger.info(f"[AUDIT] Entrada de auditoría registrada exitosamente para {property_id}, campo {field_name}.")
+        except psycopg2.Error as e:
+            logger.error(f"[AUDIT] Error al registrar entrada de auditoría para {property_id}, campo {field_name}: {e}")
+            if conn:
+                conn.rollback()
+        except Exception as e:
+            logger.error(f"[AUDIT] Error inesperado al registrar entrada de auditoría para {property_id}, campo {field_name}: {e}")
+        finally:
+            if conn:
+                conn.close()
+
     def get_properties_from_db(
         self, min_price=None, max_price=None, property_operation_type=None, property_type=None,
         min_bedrooms=None, min_bathrooms=None, max_age_years=None,
         min_construction_m2=None, min_land_m2=None, has_parking=None, keywords_description=None,
-        property_status=None, min_commission=None, contract_types_to_include=None
+        property_status=None, min_commission=None, contract_types_to_include=None, filter_missing_critical=False
     ):
         """
         Obtiene propiedades de la base de datos PostgreSQL aplicando varios filtros.
+        Si filter_missing_critical es True, solo retorna propiedades con gaps críticos.
         """
         conn = None
         try:
@@ -90,6 +170,9 @@ class PropertyRepository:
 
             query = "SELECT * FROM properties WHERE 1=1"
             params = {}
+
+            if filter_missing_critical:
+                query += " AND has_critical_gaps = TRUE"
 
             if min_price is not None:
                 query += " AND precio >= %(min_price)s"

@@ -59,17 +59,38 @@ def clean_and_transform_data(file_path):
         logger.info("[CLEANING] Columnas renombradas.")
 
         # 2. Manejar fechaAlta: convertir a datetime
-        df['fecha_alta'] = pd.to_datetime(df['fecha_alta'])
-        logger.info("[CLEANING] Columna 'fecha_alta' convertida a datetime.")
+        if 'fecha_alta' in df.columns:
+            df['fecha_alta'] = pd.to_datetime(df['fecha_alta'], errors='coerce')
+            logger.info("[CLEANING] Columna 'fecha_alta' convertida a datetime.")
+        else:
+            logger.warning("[CLEANING] Columna 'fecha_alta' no encontrada en el DataFrame.")
 
         # 3. Manejar en_internet y cocina: convertir a booleano, imputando NaN a False
-        df['en_internet'] = df['en_internet'].fillna(0).astype(bool)
-        df['cocina'] = df['cocina'].apply(lambda x: True if pd.notna(x) and str(x).lower() == 'si' else False) # Asumiendo 'si' indica True
+        if 'en_internet' in df.columns:
+            df['en_internet'] = df['en_internet'].fillna(0).astype(bool)
+        else:
+            df['en_internet'] = False # Default to False if column does not exist
+            logger.warning("[CLEANING] Columna 'en_internet' no encontrada. Inicializando a False.")
+
+        if 'cocina' in df.columns:
+            df['cocina'] = df['cocina'].apply(lambda x: True if pd.notna(x) and str(x).lower() == 'si' else False) # Asumiendo 'si' indica True
+        else:
+            df['cocina'] = False # Default to False if column does not exist
+            logger.warning("[CLEANING] Columna 'cocina' no encontrada. Inicializando a False.")
         logger.info("[CLEANING] Columnas 'en_internet' y 'cocina' convertidas a booleano.")
 
         # 4. Manejar codigo_postal y numero: convertir a string
-        df['codigo_postal'] = df['codigo_postal'].astype(str)
-        df['numero'] = df['numero'].astype(str) # Mantener como string para flexibilidad
+        if 'codigo_postal' in df.columns:
+            df['codigo_postal'] = df['codigo_postal'].fillna('').astype(str)
+        else:
+            df['codigo_postal'] = "" # Default to empty string if column does not exist
+            logger.warning("[CLEANING] Columna 'codigo_postal' no encontrada. Inicializando a cadena vacía.")
+
+        if 'numero' in df.columns:
+            df['numero'] = df['numero'].fillna('').astype(str) # Mantener como string para flexibilidad
+        else:
+            df['numero'] = "" # Default to empty string if column does not exist
+            logger.warning("[CLEANING] Columna 'numero' no encontrada. Inicializando a cadena vacía.")
         logger.info("[CLEANING] Columnas 'codigo_postal' y 'numero' convertidas a string.")
 
         # 5. Manejar otras columnas numéricas: asegurar tipo correcto, mantener nulos
@@ -128,4 +149,4 @@ def clean_and_transform_data(file_path):
         return df
     except Exception as e:
         logger.error(f"[CLEANING] Error durante la limpieza y transformación de datos: {e}")
-        return None
+        return pd.DataFrame()

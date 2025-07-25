@@ -11,37 +11,48 @@ create_table_sql = """
 CREATE TABLE IF NOT EXISTS properties (
     id VARCHAR(255) PRIMARY KEY,
     fecha_alta DATE,
-    status VARCHAR(50),
-    tipo_operacion VARCHAR(50),
-    tipo_contrato VARCHAR(50),
+    status VARCHAR(50) NOT NULL CHECK (status IN ('enPromocion', 'conIntencion', 'vendidas')),
+    tipo_operacion VARCHAR(50) NOT NULL CHECK (tipo_operacion IN ('venta', 'renta', 'traspaso', 'opcion')),
+    tipo_contrato VARCHAR(50) NOT NULL CHECK (tipo_contrato IN ('exclusiva', 'opcion', 'abierta')),
     en_internet BOOLEAN,
     clave VARCHAR(255),
     clave_oficina VARCHAR(255),
     subtipo_propiedad VARCHAR(255),
     calle VARCHAR(255),
     numero VARCHAR(50),
-    colonia VARCHAR(255),
-    municipio VARCHAR(255),
-    latitud DECIMAL(10, 8),
-    longitud DECIMAL(11, 8),
+    colonia VARCHAR(255) NOT NULL,
+    municipio VARCHAR(255) NOT NULL,
+    latitud DECIMAL(10, 8) NOT NULL,
+    longitud DECIMAL(11, 8) NOT NULL,
     codigo_postal VARCHAR(10),
-    precio DECIMAL(18, 2),
+    precio DECIMAL(18, 2) NOT NULL CHECK (precio >= 0),
     comision DECIMAL(5, 2),
     comision_compartir_externas DECIMAL(5, 2),
-    m2_construccion DECIMAL(10, 2),
-    m2_terreno DECIMAL(10, 2),
-    recamaras INTEGER,
-    banos_totales DECIMAL(4, 1),
+    m2_construccion DECIMAL(10, 2) NOT NULL CHECK (m2_construccion >= 0),
+    m2_terreno DECIMAL(10, 2) NOT NULL CHECK (m2_terreno >= 0),
+    recamaras INTEGER NOT NULL CHECK (recamaras >= 0),
+    banos_totales DECIMAL(4, 1) NOT NULL CHECK (banos_totales >= 0),
     cocina BOOLEAN,
     niveles_construidos INTEGER,
     edad INTEGER,
     estacionamientos INTEGER,
-    descripcion TEXT,
+    descripcion TEXT NOT NULL,
     nombre_agente VARCHAR(255),
     apellido_paterno_agente VARCHAR(255),
     apellido_materno_agente VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    log_id SERIAL PRIMARY KEY,
+    property_id VARCHAR(255) NOT NULL REFERENCES properties(id),
+    field_name VARCHAR(255) NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    change_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    changed_by VARCHAR(255),
+    change_source VARCHAR(50) -- e.g., 'autofill', 'manual', 'system'
 );
 """
 
@@ -71,13 +82,7 @@ def create_properties_table():
         logger.info("Ejecutando sentencia CREATE TABLE...")
         cur.execute(create_table_sql)
         conn.commit()
-        logger.info("Tabla 'properties' creada o ya existente en la base de datos.")
-
-        # --- Migración: Asegurar que la columna banos_totales exista ---
-        logger.info("Verificando/Añadiendo columna 'banos_totales' para compatibilidad...")
-        cur.execute("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
-        conn.commit()
-        logger.info("Columna 'banos_totales' verificada/añadida.")
+        logger.info("Tabla 'properties' y 'audit_log' creadas o ya existentes en la base de datos.")
 
         cur.close()
 

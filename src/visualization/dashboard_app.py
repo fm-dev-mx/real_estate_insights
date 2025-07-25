@@ -31,8 +31,10 @@ from src.utils.constants import (
 )
 from src.data_access.property_repository import PropertyRepository
 from src.visualization.dashboard_logic import apply_dashboard_transformations
-from src.data_processing.data_validator import get_incomplete_properties
+from src.data_processing.data_validator import get_incomplete_properties, COLUMN_PRIORITY
 from src.data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR
+from src.scripts.pdf_autofill import autofill_from_pdf
+from src.scripts.apply_manual_fixes import apply_manual_fixes
 
 load_dotenv() # Cargar variables de entorno desde .env
 
@@ -157,6 +159,9 @@ selected_has_parking = st.sidebar.radio('¿Tiene Estacionamiento?', options=list
 # Palabras Clave en Descripción
 keywords_description_input = st.sidebar.text_input('Palabras Clave en Descripción (separadas por coma)', value=os.environ.get('KEYWORDS_DESCRIPTION', ''))
 
+# Filtro para propiedades con datos faltantes críticos
+filter_missing_critical = st.sidebar.checkbox('Mostrar solo propiedades con datos críticos faltantes', value=False)
+
 # Obtener propiedades con los filtros seleccionados
 properties_df = property_repo.get_properties_from_db(
     min_price=min_price_input,
@@ -172,7 +177,8 @@ properties_df = property_repo.get_properties_from_db(
     keywords_description=keywords_description_input,
     property_status=property_status_filter,
     min_commission=min_commission_input,
-    contract_types_to_include=contract_types_to_include
+    contract_types_to_include=contract_types_to_include,
+    filter_missing_critical=filter_missing_critical
 )
 
 if not properties_df.empty:
@@ -185,6 +191,8 @@ if not properties_df.empty:
     # Custom display for properties with PDF download/view buttons
     # Ajustar el ancho de las columnas dinámicamente
     num_cols = len(columns_to_display) + 1 # +1 para el botón de PDF o indicador
+    if filter_missing_critical: # Si estamos filtrando por gaps, añadimos la columna de acciones
+        num_cols += 1
     col_widths = [0.5] * num_cols # Ancho base para todas las columnas
     # Ajustes específicos de ancho para algunas columnas
     if "precio" in columns_to_display: col_widths[columns_to_display.index("precio")] = 1
@@ -196,9 +204,12 @@ if not properties_df.empty:
 
     # Añadir el encabezado para la columna de PDF/Acción
     if selected_view_name == "Inversión":
-        headers[-1] = "PDF Disponible"
+        headers.append("PDF Disponible")
     else:
         headers.append("PDF")
+    
+    if filter_missing_critical:
+        headers.append("Acciones")
 
     for col_idx, header in enumerate(headers):
         cols_header[col_idx].write(f"**{header}**")
@@ -240,7 +251,7 @@ if not properties_df.empty:
                 button_label = "Descargar PDF"
                 button_type = "secondary"
 
-            if cols_data[num_cols - 1].button(button_label, key=f"pdf_action_{property_id}", type=button_type):
+            if cols_data[num_cols - 2].button(button_label, key=f"pdf_action_{property_id}", type=button_type):
                 if button_label == "Ver PDF":
                     try:
                         subprocess.Popen([pdf_local_path], shell=True)
@@ -259,6 +270,92 @@ if not properties_df.empty:
                         else:
                             my_bar.progress(0, text="Fallo en la descarga.")
                             st.error(f"Fallo al descargar PDF de {property_id}.")
+
+        # Lógica para el botón Corregir Gaps
+        if filter_missing_critical and row['has_critical_gaps']:
+            if cols_data[num_cols - 1].button("Corregir Gaps", key=f"fix_gaps_{property_id}"):
+                st.session_state[f'show_fix_gaps_{property_id}'] = not st.session_state.get(f'show_fix_gaps_{property_id}', False)
+                st.rerun()
+
+        if st.session_state.get(f'show_fix_gaps_{property_id}', False):
+            with st.expander(f"Corregir Gaps para Propiedad {property_id}", expanded=True):
+                property_details = property_repo.get_property_details(property_id)
+                if property_details is None:
+                    st.warning(f"No se pudieron cargar los detalles para la propiedad {property_id}.")
+                else:
+                    st.write("**Campos Críticos Faltantes:**")
+                    missing_critical_cols = []
+                    for col in COLUMN_PRIORITY["critical"]:
+                        if col not in property_details or pd.isna(property_details[col]) or (isinstance(property_details[col], str) and property_details[col].strip() == ''):
+                            missing_critical_cols.append(col)
+                            st.write(f"- {col.replace("_", " ").title()}")
+
+                    if not missing_critical_cols:
+                        st.success(f"¡La propiedad {property_id} ya no tiene gaps críticos!")
+                        st.session_state[f'show_fix_gaps_{property_id}'] = False # Cerrar expander
+                        st.rerun()
+                    else:
+                        st.write("--- Ingrese los valores o use Auto-llenar ---")
+                        
+                        # Diccionario para almacenar los nuevos valores
+                        new_values = {}
+                        for col in missing_critical_cols:
+                            current_value = property_details.get(col)
+                            # Usar un key único para cada input
+                            new_values[col] = st.text_input(
+                                f"Nuevo valor para {col.replace("_", " ").title()}:",
+                                value=str(current_value) if pd.notna(current_value) else "",
+                                key=f"input_{property_id}_{col}"
+                            )
+
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button(f"Auto-llenar con PDF para {property_id}", key=f"autofill_btn_{property_id}"):
+                                with st.spinner("Intentando auto-llenar desde PDF..."):
+                                    autofilled_data = autofill_from_pdf(property_id, missing_critical_cols)
+                                    if autofilled_data:
+                                        for k, v in autofilled_data.items():
+                                            st.session_state[f"input_{property_id}_{k}"] = str(v) # Actualizar el input
+                                        st.success("Auto-llenado completado. Revise los campos.")
+                                        st.rerun() # Rerun para actualizar los inputs
+                                    else:
+                                        st.warning("No se pudieron auto-llenar datos desde el PDF.")
+                        with col2:
+                            if st.button(f"Guardar Correcciones Manuales para {property_id}", key=f"save_manual_btn_{property_id}"):
+                                with st.spinner("Guardando correcciones..."):
+                                    corrections_applied = 0
+                                    for col in missing_critical_cols:
+                                        old_val = property_details.get(col)
+                                        new_val = new_values[col]
+                                        
+                                        # Convertir a tipo adecuado si es posible (ej. numérico)
+                                        if col in ['precio', 'm2_construccion', 'm2_terreno', 'recamaras', 'banos_totales', 'latitud', 'longitud']:
+                                            try:
+                                                new_val = float(new_val) if '.' in str(new_val) else int(new_val)
+                                            except ValueError:
+                                                st.error(f"Valor inválido para {col}: {new_val}. Debe ser numérico.")
+                                                continue
+
+                                        if str(old_val) != str(new_val) and new_val not in ["", None]: # Solo guardar si hay cambio y no está vacío
+                                            success = apply_manual_fixes(
+                                                property_id=property_id,
+                                                field_name=col,
+                                                old_value=old_val,
+                                                new_value=new_val,
+                                                changed_by="Dashboard User", # TODO: Implement user authentication
+                                                change_reason="Manual correction via dashboard"
+                                            )
+                                            if success:
+                                                corrections_applied += 1
+                                            else:
+                                                st.error(f"Fallo al guardar corrección para {col}.")
+                                    
+                                    if corrections_applied > 0:
+                                        st.success(f"Se aplicaron {corrections_applied} correcciones. Actualizando tabla...")
+                                        st.session_state[f'show_fix_gaps_{property_id}'] = False # Cerrar expander
+                                        st.rerun() # Rerun para actualizar la tabla
+                                    else:
+                                        st.warning("No se detectaron cambios o valores válidos para guardar.")
 
     # Tabla adicional para propiedades con campos faltantes
     st.subheader('Propiedades con Campos Faltantes')

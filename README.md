@@ -172,3 +172,14 @@ For a detailed roadmap of existing and pending tests, refer to [docs/testing_roa
 - **Environment Variables:** Ensure all required variables are set in your `.env` file.
 - **WebDriver:** Keep `chromedriver.exe` updated and correctly placed.
 - **Web Portal Changes:** The real estate portal's structure may change, requiring script adjustments.
+
+## 🚀 Kick-off Guide
+
+Follow these steps to get started with the data processing workflow:
+
+1.  `pip install -r requirements.txt`
+2.  `python src/data_processing/data_validator.py`
+3.  If `reports/missing_critical.csv` exists, run `python src/scripts/pdf_autofill.py`
+4.  If `manual_fixes.csv` is created, fill it and run `python src/scripts/apply_manual_fixes.py`
+5.  `python -m pytest tests/` (all tests must pass)
+6.  Commit & push referencing the roadmap milestone.

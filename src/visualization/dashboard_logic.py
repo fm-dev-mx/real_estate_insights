@@ -50,7 +50,7 @@ def apply_dashboard_transformations(properties_df):
     columns_to_drop = [
         'fecha_alta', 'fecha_creacion', 'fecha_modificacion', 'cocina',
         'apellido_paterno_agente', 'apellido_materno_agente', 'created_at', 'updated_at',
-        'latitud', 'longitud', 'codigo_postal', 'comision_compartir_externas'
+        'latitud', 'longitud', 'codigo_postal'
     ]
     properties_df = properties_df.drop(columns=[col for col in columns_to_drop if col in properties_df.columns], errors='ignore')
 

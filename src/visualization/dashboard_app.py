@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 logger.info("Dashboard app started.")
 
 from dotenv import load_dotenv
-import os
 
 # Load environment variables
 load_dotenv()
@@ -21,8 +20,7 @@ from src.utils.constants import (
     CONTRACT_TYPE_EXCLUSIVA, CONTRACT_TYPE_OPCION,
     DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE, DEFAULT_PROPERTY_OPERATION_TYPE,
     DEFAULT_MIN_BEDROOMS, DEFAULT_MIN_BATHROOMS, DEFAULT_MAX_AGE_YEARS,
-    DEFAULT_MIN_CONSTRUCTION_M2, DEFAULT_MIN_LAND_M2, DEFAULT_HAS_PARKING,
-    DEFAULT_KEYWORDS_DESCRIPTION, DEFAULT_IS_EXCLUSIVE_FILTER, DEFAULT_HAS_OPTION_FILTER,
+    DEFAULT_MIN_CONSTRUCTION_M2, DEFAULT_MIN_LAND_M2, DEFAULT_KEYWORDS_DESCRIPTION, DEFAULT_IS_EXCLUSIVE_FILTER, DEFAULT_HAS_OPTION_FILTER,
     PDF_DOWNLOAD_BASE_DIR
 )
 from src.data_access.property_repository import PropertyRepository
@@ -60,10 +58,15 @@ INVESTMENT_VIEW_COLUMNS = FIXED_INITIAL_COLUMNS + [
     "dias_en_mercado", "comision", "comision_compartir_externas", "edad", "estacionamientos", "pdf_available"
 ]
 
+MISSING_DATA_VIEW_COLUMNS = FIXED_INITIAL_COLUMNS + [
+    "missing_count", "recamaras", "banos_totales", "estacionamientos", "m2_construccion", "m2_terreno"
+]
+
 VIEW_OPTIONS = {
     "Resumen": SUMMARY_VIEW_COLUMNS,
     "Detallada": DETAILED_VIEW_COLUMNS,
     "Inversión": INVESTMENT_VIEW_COLUMNS,
+    "Datos faltantes": MISSING_DATA_VIEW_COLUMNS
 }
 
 selected_view_name = st.radio(
@@ -72,6 +75,12 @@ selected_view_name = st.radio(
     horizontal=True,
     key="view_selector"
 )
+
+# Force missing data filter for 'Datos faltantes' view
+if selected_view_name == "Datos faltantes":
+    filter_missing_critical = True
+    horizontal=True,
+    key="view_selector"
 
 columns_to_display = VIEW_OPTIONS[selected_view_name]
 
@@ -151,9 +160,9 @@ has_parking_options = {
 }
 
 # Estacionamiento
-selected_has_parking = st.sidebar.radio('¿Tiene Estacionamiento?', 
-    options=list(has_parking_options.keys()), 
-    format_func=lambda x: x, 
+selected_has_parking = st.sidebar.radio('¿Tiene Estacionamiento?',
+    options=list(has_parking_options.keys()),
+    format_func=lambda x: x,
     index=list(has_parking_options.keys()).index("No importa"))
 
 # Palabras Clave en Descripción
@@ -207,7 +216,7 @@ if not properties_df.empty:
         headers.append("PDF Disponible")
     else:
         headers.append("PDF")
-    
+
     if filter_missing_critical:
         headers.append("Acciones")
 
@@ -220,27 +229,31 @@ if not properties_df.empty:
         pdf_local_path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')), PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
         for col_idx, col_name in enumerate(columns_to_display):
-            if col_name == "precio":
-                cols_data[col_idx].write(f"${row[col_name]:,}")
-            elif col_name == "banos_totales":
-                cols_data[col_idx].write(f"{row[col_name]:.1f}" if pd.notna(row[col_name]) else "N/A")
-            elif col_name == "dias_en_mercado":
-                cols_data[col_idx].write(f"{row[col_name]:.0f}")
-            elif col_name == "descripcion":
-                # Truncar descripción para la vista detallada
-                description_text = row[col_name]
-                if pd.notna(description_text) and len(description_text) > 100:
-                    cols_data[col_idx].write(f"{description_text[:97]}...")
+            try:
+                if col_name == "precio":
+                    cols_data[col_idx].write(f"${row[col_name]:,}")
+                elif col_name == "banos_totales":
+                    cols_data[col_idx].write(f"{row[col_name]:.1f}" if pd.notna(row[col_name]) else "N/A")
+                elif col_name == "dias_en_mercado":
+                    cols_data[col_idx].write(f"{row[col_name]:.0f}")
+                elif col_name == "descripcion":
+                    # Truncar descripción para la vista detallada
+                    description_text = row[col_name]
+                    if pd.notna(description_text) and len(description_text) > 100:
+                        cols_data[col_idx].write(f"{description_text[:97]}...")
+                    else:
+                        cols_data[col_idx].write(description_text)
+                elif col_name == "pdf_available":
+                    # Mostrar un checkmark o X para la vista de inversión
+                    if row[col_name]:
+                        cols_data[col_idx].write("✅")
+                    else:
+                        cols_data[col_idx].write("❌")
                 else:
-                    cols_data[col_idx].write(description_text)
-            elif col_name == "pdf_available":
-                # Mostrar un checkmark o X para la vista de inversión
-                if row[col_name]:
-                    cols_data[col_idx].write("✅")
-                else:
-                    cols_data[col_idx].write("❌")
-            else:
-                cols_data[col_idx].write(row[col_name])
+                    cols_data[col_idx].write(row[col_name])
+            except KeyError:
+                # Handle missing columns gracefully
+                cols_data[col_idx].write("N/D")
 
         # Lógica para el botón de PDF (o indicador)
         if selected_view_name != "Inversión": # Si no es la vista de inversión, mostrar el botón
@@ -296,7 +309,7 @@ if not properties_df.empty:
                         st.rerun()
                     else:
                         st.write("--- Ingrese los valores o use Auto-llenar ---")
-                        
+
                         # Diccionario para almacenar los nuevos valores
                         new_values = {}
                         for col in missing_critical_cols:
@@ -327,7 +340,7 @@ if not properties_df.empty:
                                     for col in missing_critical_cols:
                                         old_val = property_details.get(col)
                                         new_val = new_values[col]
-                                        
+
                                         # Convertir a tipo adecuado si es posible (ej. numérico)
                                         if col in ['precio', 'm2_construccion', 'm2_terreno', 'recamaras', 'banos_totales', 'latitud', 'longitud']:
                                             try:
@@ -349,7 +362,7 @@ if not properties_df.empty:
                                                 corrections_applied += 1
                                             else:
                                                 st.error(f"Fallo al guardar corrección para {col}.")
-                                    
+
                                     if corrections_applied > 0:
                                         st.success(f"Se aplicaron {corrections_applied} correcciones. Actualizando tabla...")
                                         st.session_state[f'show_fix_gaps_{property_id}'] = False # Cerrar expander

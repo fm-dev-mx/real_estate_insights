@@ -15,7 +15,7 @@ COLUMN_PRIORITY = {
     "critical": [
         'id', 'precio', 'm2_construccion', 'm2_terreno', 'recamaras', 'banos_totales',
         'descripcion', 'status', 'tipo_operacion', 'tipo_contrato', 'colonia',
-        'municipio', 'latitud', 'longitud'
+        'municipio', 'latitud', 'longitud', 'estacionamientos'
     ],
     "recommended": [
         'codigo_postal', 'calle', 'numero', 'subtipo_propiedad', 'edad',

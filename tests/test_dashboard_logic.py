@@ -1,6 +1,13 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from src.visualization.dashboard_logic import apply_dashboard_transformations
+import os
+from src.utils.constants import PDF_DOWNLOAD_BASE_DIR
+
+# Define the full path for PDF downloads in the test context
+# This should reflect how it's used in dashboard_logic.py
+BASE_DIR_DASHBOARD_LOGIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'visualization', '..', '..'))
+FULL_PDF_DOWNLOAD_DIR_DASHBOARD_LOGIC = os.path.join(BASE_DIR_DASHBOARD_LOGIC, PDF_DOWNLOAD_BASE_DIR)
 
 def test_apply_dashboard_transformations_happy_path():
     # 1. Preparación (Arrange)

@@ -1,7 +1,10 @@
 import os
 import pytest
 import requests
-from src.data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR, PDF_BASE_URL, PDF_SUFFIX
+from src.data_collection.download_pdf import download_property_pdf
+from src.utils.constants import PDF_BASE_URL, PDF_SUFFIX, PDF_DOWNLOAD_BASE_DIR
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 @pytest.fixture
 def mock_requests_get(monkeypatch):

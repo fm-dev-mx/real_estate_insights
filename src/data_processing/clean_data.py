@@ -1,8 +1,6 @@
 import io
-import pandas as pd
 import os
 import logging
-from datetime import datetime
 import psycopg2
 
 from dotenv import load_dotenv
@@ -14,69 +12,61 @@ from .data_cleaner import clean_and_transform_data # Import the function
 
 load_dotenv() # Cargar variables de entorno desde .env
 
-# --- DB CONFIGURATION (from environment variables) ---
-DB_NAME = os.environ.get('REI_DB_NAME', 'real_estate_db')
-DB_USER = os.environ.get('REI_DB_USER', 'fm_asesor')
-DB_PASSWORD = os.environ.get('REI_DB_PASSWORD')
-DB_HOST = os.environ.get('REI_DB_HOST', '127.0.0.1')
-DB_PORT = os.environ.get('REI_DB_PORT', '5432')
-
 # --- CONFIGURATION ---
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DOWNLOAD_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'downloads')
-LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs') # Usar el mismo directorio de logs
+
+from src.utils.logging_config import setup_logging
 
 # --- LOGGING CONFIGURATION ---
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, f"data_processing_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE_PATH),
-    ]
-)
-
+setup_logging(log_file_prefix="data_processing_log")
 logger = logging.getLogger(__name__)
-console_handler = logging.StreamHandler()
-console_formatter = logging.Formatter('%(levelname)s - %(message)s')
-console_handler.setFormatter(console_formatter)
-logger.addHandler(console_handler)
 
-def find_target_excel_file(directory):
-    """
-    Busca el archivo Excel a procesar en el directorio especificado.
-    Prioriza los archivos .xlsx sobre los .xls y convierte el primer .xls si no hay .xlsx.
-    """
-    excel_files = [f for f in os.listdir(directory) if f.endswith('.xlsx') or f.endswith('.xls')]
+def _get_excel_files_in_directory(directory):
+    """Lists all .xlsx and .xls files in the specified directory."""
+    return [f for f in os.listdir(directory) if f.endswith('.xlsx') or f.endswith('.xls')]
 
-    if not excel_files:
-        logger.warning(f"[MAIN] No se encontraron archivos Excel (.xls o .xlsx) en {directory}.")
-        return None
-
-    # Priorizar .xlsx
+def _find_xlsx_file(directory, excel_files):
+    """Prioritizes and returns the first .xlsx file found."""
     for f in excel_files:
         if f.endswith('.xlsx'):
             target_file = os.path.join(directory, f)
             logger.info(f"[MAIN] Encontrado archivo XLSX: {target_file}")
             return target_file
+    return None
 
-    # Si no hay .xlsx, convertir el primer .xls
+def _convert_xls_to_xlsx_if_exists(directory, excel_files):
+    """Converts the first .xls file to .xlsx if no .xlsx file is found."""
     for f in excel_files:
         if f.endswith('.xls'):
             xls_file_path = os.path.join(directory, f)
             xlsx_file_name = os.path.splitext(os.path.basename(xls_file_path))[0] + '.xlsx'
             xlsx_file_path = os.path.join(directory, xls_file_name)
             logger.info(f"[MAIN] Encontrado archivo XLS: {xls_file_path}. Intentando convertir a {xlsx_file_path}...")
-            if convert_xls_to_xlsx(xls_file_path, xlsx_file_path):
+            if convert_xls_to_xlsx(xls_file_path, xls_file_path): # Changed to overwrite original xlsx_file_path
                 logger.info(f"[MAIN] Conversión exitosa. El archivo a analizar es: {xlsx_file_path}")
                 return xlsx_file_path
             else:
                 logger.error(f"[MAIN] Falló la conversión de {xls_file_path}. No se puede proceder con el análisis.")
                 return None
-
     return None
+
+def find_target_excel_file(directory):
+    """
+    Busca el archivo Excel a procesar en el directorio especificado.
+    Prioriza los archivos .xlsx sobre los .xls y convierte el primer .xls si no hay .xlsx.
+    """
+    excel_files = _get_excel_files_in_directory(directory)
+
+    if not excel_files:
+        logger.warning(f"[MAIN] No se encontraron archivos Excel (.xls o .xlsx) en {directory}.")
+        return None
+
+    xlsx_file = _find_xlsx_file(directory, excel_files)
+    if xlsx_file:
+        return xlsx_file
+
+    return _convert_xls_to_xlsx_if_exists(directory, excel_files)
 
 def main():
     logger.info("--- Script clean_data.py iniciado ---")
@@ -85,11 +75,7 @@ def main():
     logger.info("[MAIN] Realizando verificación inicial de la conexión a la base de datos...")
     conn_check = None
     try:
-        if not DB_PASSWORD:
-            logger.error("Error: La variable de entorno REI_DB_PASSWORD no está configurada.")
-            raise ValueError("La variable de entorno REI_DB_PASSWORD no está configurada.")
-
-        conn_check = get_db_connection(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+        conn_check = get_db_connection()
         logger.info("[MAIN] Verificación de conexión a la base de datos exitosa.")
         conn_check.close()
     except (psycopg2.Error, ValueError) as e:
@@ -112,7 +98,7 @@ def main():
             logger.info(cleaned_df.isnull().sum().to_string())
 
             # --- Cargar datos a PostgreSQL ---
-            property_repo = PropertyRepository(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+            property_repo = PropertyRepository()
             property_repo.load_properties(cleaned_df, DB_COLUMNS)
 
         else:

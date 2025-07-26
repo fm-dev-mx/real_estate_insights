@@ -1,9 +1,10 @@
 import psycopg2
-import getpass
 import logging
 import os
-from src.utils.constants import DB_COLUMNS # Import DB_COLUMNS
+from src.utils.logging_config import setup_logging
+from src.data_access.database_connection import get_db_connection
 
+setup_logging(log_file_prefix="create_db_table_log")
 logger = logging.getLogger(__name__)
 
 # --- SQL para crear la tabla properties ---
@@ -57,25 +58,21 @@ CREATE TABLE IF NOT EXISTS audit_log (
 """
 
 def create_properties_table():
-    db_name = os.environ.get('REI_DB_NAME', 'real_estate_db')
-    db_user = os.environ.get('REI_DB_USER', 'fm_asesor')
-    db_password = os.environ.get('REI_DB_PASSWORD')
-    db_host = os.environ.get('REI_DB_HOST', '127.0.0.1')
-    db_port = os.environ.get('REI_DB_PORT', '5432')
-
-    if not db_password:
-        logger.error("Error: La variable de entorno DB_PASSWORD no está configurada. No se puede crear la tabla.")
-        return # Salir si no hay contraseña
-
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname=db_name,
-            user=db_user,
-            password=db_password,
-            host=db_host,
-            port=db_port
-        )
+        # Get database connection parameters from environment
+        db_name = os.environ.get('REI_DB_NAME')
+        db_user = os.environ.get('REI_DB_USER')
+        db_password = os.environ.get('REI_DB_PASSWORD')
+        db_host = os.environ.get('REI_DB_HOST')
+        db_port = os.environ.get('REI_DB_PORT')
+        
+        # Validate we have all required parameters
+        if not all([db_name, db_user, db_password, db_host, db_port]):
+            logger.error("Missing required database connection parameters")
+            return
+            
+        conn = get_db_connection(db_name, db_user, db_password, db_host, db_port)
         cur = conn.cursor()
         logger.info("Conexión a la base de datos exitosa.")
 

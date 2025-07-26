@@ -3,8 +3,11 @@
 import pandas as pd
 import os
 import logging
-from datetime import datetime
+from datetime import datetime  # Added missing import
 
+from src.utils.logging_config import setup_logging
+
+setup_logging(log_file_prefix="data_validator_log")
 logger = logging.getLogger(__name__)
 
 # 1. Column-Priority Matrix (authoritative)

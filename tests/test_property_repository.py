@@ -5,7 +5,6 @@ import psycopg2 # Importar psycopg2 para poder lanzar sus errores
 
 # Importar la clase PropertyRepository y la función get_db_connection
 from src.data_access.property_repository import PropertyRepository
-from src.data_access.database_connection import get_db_connection
 from src.utils.constants import DB_COLUMNS
 
 # Mock de la conexión a la base de datos

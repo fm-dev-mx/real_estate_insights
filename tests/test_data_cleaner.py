@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
-import os
 from src.data_processing.data_cleaner import clean_and_transform_data
-from src.utils.constants import DB_COLUMNS
 
 def create_test_excel(tmp_path, data):
     """Helper function to create an Excel file for testing."""

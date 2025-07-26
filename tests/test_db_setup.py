@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import psycopg2
 import os
 
-# Importar la función a probar
-from src.db_setup.create_db_table import create_properties_table
+# Importar la función a probar y la variable create_table_sql
+from src.db_setup.create_db_table import create_properties_table, create_table_sql
 
 # Mock de las variables de entorno
 @pytest.fixture
@@ -28,13 +28,7 @@ def mock_db_connection():
         mock_connect.return_value = mock_conn
         yield mock_conn, mock_cursor, mock_connect
 
-# Mock de la sentencia SQL de creación de tabla
-@pytest.fixture
-def mock_create_table_sql():
-    with patch('src.db_setup.create_db_table.create_table_sql', "CREATE TABLE properties (id INT);") as mock_sql:
-        yield mock_sql
-
-def test_create_properties_table_success(mock_env_vars, mock_db_connection, mock_create_table_sql):
+def test_create_properties_table_success(mock_env_vars, mock_db_connection):
     mock_conn, mock_cursor, mock_connect = mock_db_connection
 
     # Act
@@ -44,15 +38,13 @@ def test_create_properties_table_success(mock_env_vars, mock_db_connection, mock
     mock_connect.assert_called_once_with(
         dbname='test_db', user='test_user', password='test_pass', host='test_host', port='5432'
     )
-    mock_cursor.execute.assert_any_call("CREATE TABLE properties (id INT);")
-    mock_cursor.execute.assert_any_call("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
-    assert mock_cursor.execute.call_count == 2
-    mock_cursor.execute.assert_any_call("ALTER TABLE properties ADD COLUMN IF NOT EXISTS banos_totales DECIMAL(4, 1);")
-    assert mock_conn.commit.call_count == 2
+    # Verificar que se ejecutó el SQL completo de creación de tablas
+    mock_cursor.execute.assert_called_once_with(create_table_sql)
+    mock_conn.commit.assert_called_once()
     mock_cursor.close.assert_called_once()
     mock_conn.close.assert_called_once()
 
-def test_create_properties_table_no_password(mock_env_vars, mock_db_connection, mock_create_table_sql):
+def test_create_properties_table_no_password(mock_env_vars, mock_db_connection):
     mock_conn, mock_cursor, mock_connect = mock_db_connection
     
     # Arrange: Eliminar la contraseña del entorno mockeado
@@ -67,7 +59,7 @@ def test_create_properties_table_no_password(mock_env_vars, mock_db_connection, 
         mock_cursor.close.assert_not_called()
         mock_conn.close.assert_not_called()
 
-def test_create_properties_table_db_error(mock_env_vars, mock_db_connection, mock_create_table_sql):
+def test_create_properties_table_db_error(mock_env_vars, mock_db_connection):
     mock_conn, mock_cursor, mock_connect = mock_db_connection
     mock_connect.side_effect = psycopg2.Error("Simulated DB Error")
 

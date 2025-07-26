@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-import psycopg2
 import os
 
 # Importar la variable create_table_sql del módulo de configuración de DB

@@ -1,8 +1,11 @@
 import pandas as pd
 import logging
-import os # Added this import
+import os
 from src.utils.constants import DB_COLUMNS
 
+from src.utils.logging_config import setup_logging
+
+setup_logging(log_file_prefix="data_cleaner_log")
 logger = logging.getLogger(__name__)
 
 def clean_and_transform_data(file_path):

@@ -1,21 +1,18 @@
 import os
 import logging
-import time
 import requests
-from datetime import datetime
 
+from src.utils.logging_config import setup_logging
+from src.utils.constants import PDF_BASE_URL, PDF_SUFFIX, PDF_DOWNLOAD_BASE_DIR
+
+setup_logging(log_file_prefix="download_pdf_log")
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-PDF_DOWNLOAD_BASE_DIR = os.path.join(BASE_DIR, 'data', 'pdfs')
-
 # Asegurarse de que el directorio base de descarga de PDFs exista
-os.makedirs(PDF_DOWNLOAD_BASE_DIR, exist_ok=True)
-
-# URL base para la descarga de PDFs
-PDF_BASE_URL = "https://plus.21onlinemx.com/ft/"
-PDF_SUFFIX = "/DTF/273/40120"
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+FULL_PDF_DOWNLOAD_DIR = os.path.join(BASE_DIR, PDF_DOWNLOAD_BASE_DIR)
+os.makedirs(FULL_PDF_DOWNLOAD_DIR, exist_ok=True)
 
 def download_property_pdf(property_id: str) -> str or None:
     """
@@ -31,11 +28,11 @@ def download_property_pdf(property_id: str) -> str or None:
     logger.info(f"[PDF_DOWNLOAD] Iniciando descarga para property_id: {property_id}")
     pdf_url = f"{PDF_BASE_URL}{property_id}{PDF_SUFFIX}"
     logger.info(f"[PDF_DOWNLOAD] URL del PDF construida: {pdf_url}")
-    pdf_local_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
+    pdf_local_path = os.path.join(BASE_DIR, PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
     if os.path.exists(pdf_local_path):
         logger.info(f"[PDF_DOWNLOAD] PDF para la propiedad {property_id} ya existe en {pdf_local_path}. Saltando descarga.")
-        return pdf_local_path
+        return os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
     try:
         logger.info(f"[PDF_DOWNLOAD] Intentando descargar PDF desde: {pdf_url}")
@@ -47,7 +44,7 @@ def download_property_pdf(property_id: str) -> str or None:
                 f.write(chunk)
         
         logger.info(f"[PDF_DOWNLOAD] PDF de la propiedad {property_id} descargado exitosamente en {pdf_local_path}.")
-        return pdf_local_path
+        return os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
     except requests.exceptions.RequestException as e:
         logger.error(f"[PDF_DOWNLOAD] Error de red o HTTP al descargar PDF para {property_id}. Error: {e}")

@@ -2,6 +2,9 @@ import win32com.client as win32
 import pythoncom
 import logging
 
+from src.utils.logging_config import setup_logging
+
+setup_logging(log_file_prefix="excel_converter_log")
 logger = logging.getLogger(__name__)
 
 def convert_xls_to_xlsx(xls_path, xlsx_path):

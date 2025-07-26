@@ -2,7 +2,10 @@
 
 import pandas as pd
 import os
-from src.data_collection.download_pdf import PDF_DOWNLOAD_BASE_DIR
+from src.utils.constants import PDF_DOWNLOAD_BASE_DIR
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+FULL_PDF_DOWNLOAD_DIR = os.path.join(BASE_DIR, PDF_DOWNLOAD_BASE_DIR)
 
 def apply_dashboard_transformations(properties_df):
     """
@@ -38,7 +41,7 @@ def apply_dashboard_transformations(properties_df):
     # Añadir columna para indicar si el PDF está disponible localmente
     if 'id' in properties_df.columns:
         properties_df['pdf_available'] = properties_df['id'].apply(
-            lambda x: os.path.exists(os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{x}.pdf"))
+            lambda x: os.path.exists(os.path.join(FULL_PDF_DOWNLOAD_DIR, f"{x}.pdf"))
         )
     else:
         properties_df['pdf_available'] = False

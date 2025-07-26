@@ -4,19 +4,28 @@ from psycopg2 import extras
 import logging
 
 from src.data_access.database_connection import get_db_connection
+from src.utils.logging_config import setup_logging
 
+setup_logging(log_file_prefix="property_repository_log")
 logger = logging.getLogger(__name__)
 
 class PropertyRepository:
-    def __init__(self, db_name, db_user, db_password, db_host, db_port):
-        self.db_name = db_name
-        self.db_user = db_user
-        self.db_password = db_password
-        self.db_host = db_host
-        self.db_port = db_port
-
-    def _get_connection(self):
-        return get_db_connection(self.db_name, self.db_user, self.db_password, self.db_host, self.db_port)
+    def __init__(self, db, user, pwd, host, port):
+        self.db = db
+        self.user = user
+        self.pwd = pwd
+        self.host = host
+        self.port = port
+        
+    def _get_connection(self) -> psycopg2.extensions.connection:
+        """Create a new database connection using the stored credentials"""
+        return get_db_connection(
+            db=self.db,
+            user=self.user,
+            pwd=self.pwd,
+            host=self.host,
+            port=self.port
+        )
 
     def load_properties(self, df, db_columns):
         """
@@ -237,8 +246,7 @@ class PropertyRepository:
             logger.error(f"[DB_RETRIEVE] Error de configuración de la base de datos: {e}")
         except Exception as e:
             logger.error(f"[DB_RETRIEVE] Un error inesperado ocurrió al cargar propiedades: {e}")
-            import traceback
-            traceback.print_exc()
+            
         finally:
             if conn:
                 conn.close()

@@ -1,6 +1,4 @@
-import pytest
 from unittest.mock import MagicMock, patch
-import os
 
 from src.data_processing.excel_converter import convert_xls_to_xlsx
 

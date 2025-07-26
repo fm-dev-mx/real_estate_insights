@@ -1,8 +1,7 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import os
 from src.scripts.apply_manual_fixes import apply_manual_fixes
-from src.data_access.property_repository import PropertyRepository
 
 # Fixture para mockear las variables de entorno de la DB
 @pytest.fixture

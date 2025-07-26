@@ -1,51 +1,45 @@
 import streamlit as st
 import pandas as pd
 import os
-from dotenv import load_dotenv
 import subprocess
 import logging
-from datetime import datetime
-import sys
 
-# --- LOGGING CONFIGURATION ---
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-LOG_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'logs')
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, f"app_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log")
+from src.utils.logging_config import setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE_PATH, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout) # Also log to console
-    ]
-)
-
+setup_logging(log_file_prefix="dashboard_app_log")
 logger = logging.getLogger(__name__)
 logger.info("Dashboard app started.")
 
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
 from src.utils.constants import (
     STATUS_EN_PROMOCION, STATUS_CON_INTENCION, STATUS_VENDIDAS,
-    CONTRACT_TYPE_EXCLUSIVA, CONTRACT_TYPE_OPCION
+    CONTRACT_TYPE_EXCLUSIVA, CONTRACT_TYPE_OPCION,
+    DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE, DEFAULT_PROPERTY_OPERATION_TYPE,
+    DEFAULT_MIN_BEDROOMS, DEFAULT_MIN_BATHROOMS, DEFAULT_MAX_AGE_YEARS,
+    DEFAULT_MIN_CONSTRUCTION_M2, DEFAULT_MIN_LAND_M2, DEFAULT_HAS_PARKING,
+    DEFAULT_KEYWORDS_DESCRIPTION, DEFAULT_IS_EXCLUSIVE_FILTER, DEFAULT_HAS_OPTION_FILTER,
+    PDF_DOWNLOAD_BASE_DIR
 )
 from src.data_access.property_repository import PropertyRepository
 from src.visualization.dashboard_logic import apply_dashboard_transformations
 from src.data_processing.data_validator import get_incomplete_properties, COLUMN_PRIORITY
-from src.data_collection.download_pdf import download_property_pdf, PDF_DOWNLOAD_BASE_DIR
+from src.data_collection.download_pdf import download_property_pdf
 from src.scripts.pdf_autofill import autofill_from_pdf
 from src.scripts.apply_manual_fixes import apply_manual_fixes
 
-load_dotenv() # Cargar variables de entorno desde .env
-
-# --- DB CONFIGURATION (from environment variables) ---
-DB_NAME = os.environ.get('REI_DB_NAME', 'real_estate_db')
-DB_USER = os.environ.get('REI_DB_USER', 'fm_asesor')
-DB_PASSWORD = os.environ.get('REI_DB_PASSWORD')
-DB_HOST = os.environ.get('REI_DB_HOST', '127.0.0.1')
-DB_PORT = os.environ.get('REI_DB_PORT', '5432')
-
-property_repo = PropertyRepository(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+# Initialize PropertyRepository with environment variables
+property_repo = PropertyRepository(
+    db=os.getenv('REI_DB_NAME'),
+    user=os.getenv('REI_DB_USER'),
+    pwd=os.getenv('REI_DB_PASSWORD'),
+    host=os.getenv('REI_DB_HOST'),
+    port=os.getenv('REI_DB_PORT')
+)
 
 # --- Streamlit App ---
 st.set_page_config(layout="wide")
@@ -86,8 +80,8 @@ st.sidebar.header('Filtros de Propiedades')
 
 # Rango de Precios
 st.sidebar.subheader('Rango de Precios')
-min_default_price = int(float(os.environ.get('MIN_PRICE', 1500000)))
-max_default_price = int(float(os.environ.get('MAX_PRICE', 3500000)))
+min_default_price = DEFAULT_MIN_PRICE
+max_default_price = DEFAULT_MAX_PRICE
 
 price_range = st.sidebar.slider(
     'Selecciona el rango de precios',
@@ -102,7 +96,7 @@ max_price_input = price_range[1]
 
 # Tipo de Operación (mantener si es relevante, aunque el foco es el estatus)
 operation_types = ['venta', 'renta', 'traspaso', 'opcion']
-selected_operation_type = st.sidebar.multiselect('Tipo de Operación', options=operation_types, default=os.environ.get('PROPERTY_OPERATION_TYPE', '').split(',') if os.environ.get('PROPERTY_OPERATION_TYPE') else [])
+selected_operation_type = st.sidebar.multiselect('Tipo de Operación', options=operation_types, default=DEFAULT_PROPERTY_OPERATION_TYPE)
 
 # Estatus de Propiedad
 st.sidebar.subheader('Estatus de Propiedad')
@@ -117,8 +111,8 @@ property_status_filter = ','.join(selected_status)
 
 # Exclusivas y Opción
 st.sidebar.subheader('Exclusividad y Opción')
-is_exclusive_filter = st.sidebar.checkbox('Mostrar solo exclusivas', value=True) # Por defecto True
-has_option_filter = st.sidebar.checkbox('Incluir propiedades con estatus "opción"', value=False) # Por defecto False
+is_exclusive_filter = st.sidebar.checkbox('Mostrar solo exclusivas', value=DEFAULT_IS_EXCLUSIVE_FILTER)
+has_option_filter = st.sidebar.checkbox('Incluir propiedades con estatus "opción"', value=DEFAULT_HAS_OPTION_FILTER)
 
 contract_types_to_include = []
 if is_exclusive_filter:
@@ -132,32 +126,38 @@ min_commission_input = st.sidebar.number_input('Comisión Mínima (%)', min_valu
 
 # Tipo de Propiedad
 property_types = ['casa', 'departamento', 'terreno', 'oficina', 'local', 'bodega', 'consultorio'] # Puedes expandir esta lista
-selected_property_type = st.sidebar.multiselect('Tipo de Propiedad', options=property_types, default=os.environ.get('PROPERTY_TYPE', '').split(',') if os.environ.get('PROPERTY_TYPE') else [])
+selected_property_type = st.sidebar.multiselect('Tipo de Propiedad', options=property_types, default=DEFAULT_PROPERTY_OPERATION_TYPE)
 
 # Recámaras
-min_bedrooms_input = st.sidebar.number_input('Recámaras Mínimas', min_value=0, value=int(os.environ.get('MIN_BEDROOMS', 0)))
+min_bedrooms_input = st.sidebar.number_input('Recámaras Mínimas', min_value=0, value=int(DEFAULT_MIN_BEDROOMS))
 
 # Baños
-min_bathrooms_input = st.sidebar.number_input('Baños Mínimos', min_value=0, value=int(float(os.environ.get('MIN_BATHROOMS', 0.0))))
+min_bathrooms_input = st.sidebar.number_input('Baños Mínimos', min_value=0.0, value=float(DEFAULT_MIN_BATHROOMS))
 
 # Edad de la Propiedad
-max_age_years_input = st.sidebar.number_input('Edad Máxima (años)', min_value=0, value=int(os.environ.get('MAX_AGE_YEARS', 999)))
+max_age_years_input = st.sidebar.number_input('Edad Máxima (años)', min_value=0, value=int(DEFAULT_MAX_AGE_YEARS))
 
 # M2 Construcción
-min_construction_m2_input = st.sidebar.number_input('M2 Construcción Mínimos', min_value=0.0, value=float(os.environ.get('MIN_CONSTRUCTION_M2', 0.0)))
+min_construction_m2_input = st.sidebar.number_input('M2 Construcción Mínimos', min_value=0.0, value=float(DEFAULT_MIN_CONSTRUCTION_M2))
 
 # M2 Terreno
-min_land_m2_input = st.sidebar.number_input('M2 Terreno Mínimos', min_value=0.0, value=float(os.environ.get('MIN_LAND_M2', 0.0)))
+min_land_m2_input = st.sidebar.number_input('M2 Terreno Mínimos', min_value=0.0, value=float(DEFAULT_MIN_LAND_M2))
+
+# Define parking options
+has_parking_options = {
+    "Sí": True,
+    "No": False,
+    "No importa": None
+}
 
 # Estacionamiento
-has_parking_options = {'No importa': None, 'Sí': True, 'No': False}
-default_has_parking = os.environ.get('HAS_PARKING')
-if default_has_parking is not None:
-    default_has_parking = True if default_has_parking.lower() == 'true' else (False if default_has_parking.lower() == 'false' else None)
-selected_has_parking = st.sidebar.radio('¿Tiene Estacionamiento?', options=list(has_parking_options.keys()), format_func=lambda x: x, index=list(has_parking_options.values()).index(default_has_parking))
+selected_has_parking = st.sidebar.radio('¿Tiene Estacionamiento?', 
+    options=list(has_parking_options.keys()), 
+    format_func=lambda x: x, 
+    index=list(has_parking_options.keys()).index("No importa"))
 
 # Palabras Clave en Descripción
-keywords_description_input = st.sidebar.text_input('Palabras Clave en Descripción (separadas por coma)', value=os.environ.get('KEYWORDS_DESCRIPTION', ''))
+keywords_description_input = st.sidebar.text_input('Palabras Clave en Descripción (separadas por coma)', value=DEFAULT_KEYWORDS_DESCRIPTION)
 
 # Filtro para propiedades con datos faltantes críticos
 filter_missing_critical = st.sidebar.checkbox('Mostrar solo propiedades con datos críticos faltantes', value=False)
@@ -217,7 +217,7 @@ if not properties_df.empty:
     for index, row in properties_df.iterrows():
         cols_data = st.columns(col_widths)
         property_id = row['id']
-        pdf_local_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
+        pdf_local_path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')), PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
         for col_idx, col_name in enumerate(columns_to_display):
             if col_name == "precio":

@@ -1,7 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pandas as pd
-import os
 
 # Mock de COLUMN_PRIORITY para pruebas
 @pytest.fixture

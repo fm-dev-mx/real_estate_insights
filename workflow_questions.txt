@@ -1,0 +1,82 @@
+Preguntas Clave para la Implementación del Nuevo Workflow
+
+Por favor, responde a las siguientes preguntas para guiar la implementación de las nuevas funcionalidades. Marca con una 'X' la opción que prefieras o proporciona tu respuesta en el espacio indicado.
+
+---
+
+**1. Ubicación de los nuevos scripts (`pdf_autofill.py`, `apply_manual_fixes.py`)**
+
+¿Dónde deberían ubicarse los nuevos scripts que manejan el auto-llenado de PDFs y la aplicación de correcciones manuales?
+
+a) `scripts/` en la raíz del proyecto (ej. `python scripts/pdf_autofill.py`)
+b) `src/data_processing/` (integrados con la lógica de procesamiento de datos existente)
+c) `src/scripts/` (un nuevo subdirectorio dentro de `src/` para scripts de utilidad)
+
+Tu respuesta: c
+
+**Respuesta Sugerida:** c) `src/scripts/`
+**Justificación:** Crear un nuevo subdirectorio `src/scripts/` permite agrupar scripts de utilidad que son parte del flujo de trabajo pero no módulos de procesamiento de datos centrales. Esto mantiene la estructura `src/` organizada y alineada con las convenciones de Python para paquetes, mientras que `scripts/` en la raíz podría ser para scripts de orquestación de alto nivel.
+
+---
+
+**2. Gestión de `data_validator.py`**
+
+Actualmente existe `src/data_processing/data_validator.py`. ¿Cómo deberíamos integrar la nueva lógica de detección de datos faltantes y generación de `missing_critical.csv`?
+
+a) Actualizar el `src/data_processing/data_validator.py` existente para implementar la nueva lógica. (Recomendado para centralizar la validación de datos).
+b) Crear un nuevo `scripts/data_validator.py` y mantener el `src/data_processing/data_validator.py` actual para otros propósitos.
+c) Crear un nuevo `scripts/data_validator.py` y eliminar el `src/data_processing/data_validator.py` existente.
+
+Tu respuesta: a
+
+**Respuesta Sugerida:** a) Actualizar el `src/data_processing/data_validator.py` existente.
+**Justificación:** Centraliza toda la lógica de validación de datos en un único lugar, evitando duplicación de código y facilitando el mantenimiento. Es el lugar natural para la detección de datos faltantes.
+
+---
+
+**3. Generación del log de errores (`errors_and_fixes.md`)**
+
+El documento `errors_and_fixes.md` se describe como un "Auto-generated gap log". ¿Qué script o proceso debería ser el responsable principal de generar y actualizar este archivo?
+
+a) `data_validator.py` (ya que es el que detecta los gaps).
+b) `pdf_autofill.py` (si es el que intenta llenar los gaps y registra los resultados).
+c) Un nuevo script de reporte dedicado, ejecutado después de la validación y el auto-llenado.
+
+Tu respuesta: a
+
+**Respuesta Sugerida:** a) `data_validator.py`
+**Justificación:** `data_validator.py` es el punto donde se identifican inicialmente los datos faltantes. Es lógico que este script sea el que genere el log inicial de gaps. `pdf_autofill.py` podría actualizarlo con los gaps que no pudo resolver automáticamente.
+
+---
+
+**4. Restricciones `CHECK` para campos críticos en PostgreSQL**
+
+Para los campos marcados como "Critical – NOT NULL", ¿deseas añadir restricciones `CHECK` adicionales en el script SQL de PostgreSQL para validar el rango o formato de los datos?
+
+a) Sí, añadir `CHECK` para asegurar que los valores numéricos sean positivos (ej. `precio > 0`, `m2_construccion >= 0`).
+b) Sí, añadir `CHECK` para validar que los campos de texto sigan un formato específico o estén dentro de un conjunto de valores predefinidos (ej. `status IN ('enPromocion', 'vendidas')`).
+c) Sí, ambas opciones (a y b).
+d) No, las restricciones `NOT NULL` son suficientes por ahora.
+
+Si eliges (a), (b) o (c), por favor, especifica cualquier condición `CHECK` particular que tengas en mente para columnas específicas.
+
+Tu respuesta: c
+
+**Respuesta Sugerida:** c) Sí, ambas opciones (a y b).
+**Justificación:** Implementar restricciones `CHECK` a nivel de base de datos es una buena práctica para asegurar la integridad y calidad de los datos desde la fuente. Esto previene la inserción de datos ilógicos o inconsistentes, incluso si hay errores en la lógica de la aplicación.
+
+---
+
+**5. Representación en diagramas de Mermaid (`system_overview.mmd`, `current_state.mmd`)**
+
+Para la actualización de los diagramas de Mermaid, ¿tienes alguna preferencia sobre cómo representar los nuevos componentes (`pdf_autofill.py`, `apply_manual_fixes.py`, `audit_log` table) y sus interacciones, especialmente para mantener la claridad y el límite de 12 nodos en `system_overview.mmd`?
+
+a) Representación estándar de nodos y flechas, enfocándose en el flujo de datos.
+b) Usar diferentes formas o colores para distinguir tipos de componentes (ej. scripts, bases de datos, archivos).
+c) Priorizar la concisión en `system_overview.mmd` y detallar más en `current_state.mmd`.
+d) Otra (especificar).
+
+Tu respuesta: b y c
+
+**Respuesta Sugerida:** c) Priorizar la concisión en `system_overview.mmd` y detallar más en `current_state.mmd`.
+**Justificación:** `system_overview.mmd` debe ofrecer una vista de alto nivel y fácil de entender. Los detalles del flujo de datos y los nuevos componentes se representarán mejor en `current_state.mmd`, que puede ser más granular sin sobrecargar el diagrama principal.

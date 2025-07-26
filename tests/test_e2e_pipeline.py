@@ -4,12 +4,9 @@ import pandas as pd
 import os
 
 # Importar las funciones clave del pipeline
-from src.data_collection.download_inventory import download_inventory_process
 from src.data_processing.data_cleaner import clean_and_transform_data
 from src.data_processing.data_validator import validate_and_report_missing_data
 from src.data_access.property_repository import PropertyRepository
-from src.scripts.pdf_autofill import autofill_from_pdf
-from src.scripts.apply_manual_fixes import apply_manual_fixes
 from src.db_setup.create_db_table import create_properties_table
 
 # Fixtures para mockear dependencias externas

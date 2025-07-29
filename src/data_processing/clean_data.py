@@ -1,25 +1,25 @@
+# Standard library imports
 import io
 import os
 import logging
+
+# Third-party imports
 import psycopg2
-
 from dotenv import load_dotenv
-from ..utils.constants import DB_COLUMNS
-from .excel_converter import convert_xls_to_xlsx
-from ..data_access.database_connection import get_db_connection
-from ..data_access.property_repository import PropertyRepository
-from .data_cleaner import clean_and_transform_data # Import the function
 
-load_dotenv() # Cargar variables de entorno desde .env
-
-# --- CONFIGURATION ---
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-DOWNLOAD_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'downloads')
-
+# Local application imports
+from src.utils.constants import DB_COLUMNS
+from src.data_processing.excel_converter import convert_xls_to_xlsx
+from src.data_access.database_connection import get_db_connection
+from src.data_access.property_repository import PropertyRepository
+from src.data_processing.data_cleaner import clean_and_transform_data
 from src.utils.logging_config import setup_logging
 
-# --- LOGGING CONFIGURATION ---
-setup_logging(log_file_prefix="data_processing_log")
+# --- INITIALIZATION & CONFIGURATION ---
+load_dotenv()  # Cargar variables de entorno desde .env
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DOWNLOAD_DIR = os.path.join(BASE_DIR, 'src', 'data_collection', 'downloads')
+setup_logging(log_file_prefix="process_inventory_log") # Log prefix for the inventory processing pipeline
 logger = logging.getLogger(__name__)
 
 def _get_excel_files_in_directory(directory):
@@ -43,7 +43,8 @@ def _convert_xls_to_xlsx_if_exists(directory, excel_files):
             xlsx_file_name = os.path.splitext(os.path.basename(xls_file_path))[0] + '.xlsx'
             xlsx_file_path = os.path.join(directory, xls_file_name)
             logger.info(f"[MAIN] Encontrado archivo XLS: {xls_file_path}. Intentando convertir a {xlsx_file_path}...")
-            if convert_xls_to_xlsx(xls_file_path, xls_file_path): # Changed to overwrite original xlsx_file_path
+            # Convert the found .xls file to a .xlsx file for processing.
+            if convert_xls_to_xlsx(xls_file_path, xlsx_file_path):
                 logger.info(f"[MAIN] Conversión exitosa. El archivo a analizar es: {xlsx_file_path}")
                 return xlsx_file_path
             else:

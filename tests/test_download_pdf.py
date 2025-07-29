@@ -41,7 +41,6 @@ def test_download_property_pdf_success(mock_requests_get, mock_os_path_exists, m
     """
     # Arrange
     property_id = "12345"
-    expected_url = f"{PDF_BASE_URL}{property_id}{PDF_SUFFIX}"
     expected_path = os.path.join(PDF_DOWNLOAD_BASE_DIR, f"{property_id}.pdf")
 
     # Act

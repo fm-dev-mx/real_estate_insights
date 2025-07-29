@@ -1,0 +1,59 @@
+{
+    "name": "Formato Estándar",
+    "fields": {
+        "precio": {
+            "patterns": [
+                "Precio:\\\\s*(\\\\$[\\\\d,]+)",
+                "Valor:\\\\s*([\\\\d\\\\s]+\\\\s*USD)",
+                "Importe:\\\\s*(\\\\$[\\\\d,]+)"
+            ],
+            "type": "currency",
+            "required": true
+        },
+        "m2_construccion": {
+            "patterns": [
+                "Construcción:\\s*([\\d,]+)",
+                "m² de construcción:\\s*([\\d,]+)",
+                "Superficie construida:\\s*([\\d,]+)"
+            ],
+            "type": "number",
+            "required": true
+        },
+        "m2_terreno": {
+            "patterns": [
+                "Terreno:\\s*([\\d,]+)",
+                "m² de terreno:\\s*([\\d,]+)",
+                "Superficie terreno:\\s*([\\d,]+)"
+            ],
+            "type": "number",
+            "required": true
+        },
+        "recamaras": {
+            "patterns": [
+                "Recámaras:\\s*(\\d+)",
+                "Habitaciones:\\s*(\\d+)",
+                "Dormitorios:\\s*(\\d+)"
+            ],
+            "type": "number",
+            "required": true
+        },
+        "banos_totales": {
+            "patterns": [
+                "Baños:\\s*(\\d+)",
+                "Baños completos:\\s*(\\d+)",
+                "Sanitarios:\\s*(\\d+)"
+            ],
+            "type": "number",
+            "required": true
+        },
+        "estacionamientos": {
+            "patterns": [
+                "Estacionamiento:\\s*(\\d+)",
+                "Cajones:\\s*(\\d+)",
+                "Parking:\\s*(\\d+)"
+            ],
+            "type": "number",
+            "required": true
+        }
+    }
+}

@@ -204,9 +204,12 @@ if not properties_df.empty:
         num_cols += 1
     col_widths = [0.5] * num_cols # Ancho base para todas las columnas
     # Ajustes específicos de ancho para algunas columnas
-    if "precio" in columns_to_display: col_widths[columns_to_display.index("precio")] = 1
-    if "descripcion" in columns_to_display: col_widths[columns_to_display.index("descripcion")] = 2
-    if "colonia" in columns_to_display: col_widths[columns_to_display.index("colonia")] = 1.5
+    if "precio" in columns_to_display:
+        col_widths[columns_to_display.index("precio")] = 1
+    if "descripcion" in columns_to_display:
+        col_widths[columns_to_display.index("descripcion")] = 2
+    if "colonia" in columns_to_display:
+        col_widths[columns_to_display.index("colonia")] = 1.5
 
     cols_header = st.columns(col_widths)
     headers = [col.replace("_", " ").title() for col in columns_to_display]

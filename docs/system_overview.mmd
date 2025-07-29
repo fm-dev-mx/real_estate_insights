@@ -1,36 +1,53 @@
-graph TD
-    subgraph User Interaction
-        User[Usuario] --> Runner(run_dashboard.py)
+flowchart TB
+    %% ===== CAPA UI =====
+    subgraph UI["UI Layer (Streamlit)"]
+        direction TB
+        run_dashboard["run_dashboard.py"]
+        dashboard_app["dashboard_app.py"]
     end
 
-    subgraph Application Execution
-        Runner -- Sets PYTHONPATH & Executes --> Streamlit(Streamlit Engine)
-        Streamlit -- Runs --> DashboardApp(visualization/dashboard_app.py)
+    %% ===== CAPA LÓGICA =====
+    subgraph Logic["Business Logic"]
+        direction TB
+        dashboard_logic["dashboard_logic.py"]
+        data_validator["data_validator.py"]
+        pdf_autofill["pdf_autofill.py"]
     end
 
-    subgraph Core Modules
-        DashboardApp -- Uses --> Logic(visualization/dashboard_logic.py)
-        DashboardApp -- Uses --> UI(visualization/ui_components.py)
-        DashboardApp -- Interacts with --> Repo(data_access/property_repository.py)
-        DashboardApp -- Triggers --> PdfDownloader(data_collection/download_pdf.py)
-        Repo -- Manages --> DB[(PostgreSQL Database)]
+    %% ===== CAPA ACCESO DATOS =====
+    subgraph DataAccess["Data Access"]
+        direction TB
+        property_repository["property_repository.py"]
     end
 
-    subgraph Data Flow
-        RawExcel[Archivos Excel Crudos] --> Cleaner(data_processing/data_cleaner.py)
-        Cleaner -- Uses --> Converter(data_processing/excel_converter.py)
-        Cleaner -- Uses --> Validator(data_processing/data_validator.py)
-        Cleaner -- Loads Data --> Repo
-    end
-    
-    subgraph Data Collection
-         PdfDownloader -- Downloads PDF to --> LocalStorage[data/pdfs]
+    %% ===== PERSISTENCIA =====
+    subgraph Persistence["Persistence"]
+        direction TB
+        database_connection["database_connection.py"]
+        db[(PostgreSQL)]
     end
 
-    subgraph Configuration
-        EnvFile[.env] -- Provides Credentials --> Repo
-        EnvFile -- Provides Settings --> DashboardApp
-    end
+    %% ===== SUBSISTEMAS =====
+    DataIngestion["Data Ingestion"]:::subsystem
+    PDFExtraction["PDF Extraction"]:::subsystem
+    ValidationLayer["Validation Layer"]:::subsystem
+    DashboardRenderer["Dashboard Renderer"]:::subsystem
+    ManualFixHandler["Manual Fix Handler"]:::subsystem
 
-    style Runner fill:#cde4f7,stroke:#333,stroke-width:2px
-    style Streamlit fill:#ff4b4b,stroke:#333,stroke-width:2px
+    %% ===== CONEXIONES =====
+    UI -->|"Ejecuta"| Logic
+    Logic -->|"Consulta"| DataAccess
+    DataAccess -->|"Accede"| Persistence
+
+    DataIngestion -->|"Provee datos"| ValidationLayer
+    PDFExtraction -->|"Provee PDFs"| Logic
+    ValidationLayer -->|"Datos validados"| DataAccess
+    DashboardRenderer -->|"Muestra datos"| UI
+    ManualFixHandler -->|"Corrige datos"| Persistence
+
+    %% Estilos
+    classDef subsystem fill:#f9f,stroke:#333,stroke-width:2px
+
+    %% Relaciones opcionales/planificadas
+    %% UI -->|Planificado: API| FutureAPI[FastAPI]:::future
+    %% classDef future fill:#ccf,stroke-dasharray: 5 5

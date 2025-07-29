@@ -158,10 +158,10 @@ def test_download_inventory_login_failure(mock_selenium_components, mock_env_var
         call(download_inventory.SCREENSHOT_DIR, exist_ok=True)
     ])
 
-def test_download_inventory_no_credentials(mock_selenium_components, mock_os_functions, mock_file_operations):
+def test_download_inventory_missing_env_vars(mock_selenium_components, mock_os_functions, mock_file_operations):
+    # Setup mocks
     mock_driver, mock_chrome, mock_webdriver_wait = mock_selenium_components
     mock_makedirs, mock_exists, mock_listdir, mock_getsize = mock_os_functions
-    mock_open = mock_file_operations
 
     # Arrange: No mockear las variables de entorno para simular que no existen
     with patch.dict(os.environ, clear=True):
